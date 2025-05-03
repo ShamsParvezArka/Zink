@@ -49,7 +49,7 @@ LRESULT CALLBACK kbd_hook_callback(int hook_code, WPARAM w_param, LPARAM l_param
                const char *title = "Paint.gg";
 
                take_screenshot(screen, width, height);
-               canvas(width, height);
+               canvas(width, height, title);
            }
            break;
            
