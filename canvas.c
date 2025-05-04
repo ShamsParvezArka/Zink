@@ -27,9 +27,12 @@ void canvas(int width, int height, int true_width, int true_height)
   Rectangle dst = {0.0f, 0.0f, true_width, true_height};
   Vector2 origin = {0, 0};
 
+  RenderTexture2D drawing_plane = LoadRenderTexture(true_width, true_height);
+  Vector2 last_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+
   while (!WindowShouldClose())
   {
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL))
     {
       Vector2 mouse_dt = GetMouseDelta();
       mouse_dt = Vector2Scale(mouse_dt, -1.0f/camera.zoom);
@@ -49,6 +52,30 @@ void canvas(int width, int height, int true_width, int true_height)
         
     float dt = GetFrameTime();
     camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * dt);
+
+    Vector2 current_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+    BeginTextureMode(drawing_plane);
+    {
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyUp(KEY_LEFT_CONTROL))
+      {
+        float spacing = 0.5f;
+        Vector2 dt = Vector2Subtract(current_mouse_world, last_mouse_world);
+        float length = Vector2Length(dt);
+
+        if (length > 0.0f)
+        {
+          Vector2 direction = Vector2Scale(dt, 1.0f / length);
+          for (float i = 0; i <= length; i += spacing)
+          {
+            Vector2 point = Vector2Add(last_mouse_world,
+                                       Vector2Scale(direction, i));
+            DrawCircleV(point, 2.0f, RED);
+          }
+        }
+      }
+    }
+    EndTextureMode();
+    last_mouse_world = current_mouse_world;
          
     BeginDrawing();
     {
@@ -56,6 +83,13 @@ void canvas(int width, int height, int true_width, int true_height)
       BeginMode2D(camera);
       {
         DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
+        DrawTextureRec(drawing_plane.texture,
+                       (Rectangle) { 0,
+                                     0,
+                                     drawing_plane.texture.width,
+                                     -drawing_plane.texture.height},
+                       (Vector2) { 0, 0 },
+                       WHITE);        
       }
       EndMode2D();
     }
