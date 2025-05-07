@@ -1,4 +1,5 @@
 # Compiler generated files
-debug/*.pbd
-debug/*.obj
-debug/*.ink
+*.pbd
+*.obj
+*.ink
+debug/

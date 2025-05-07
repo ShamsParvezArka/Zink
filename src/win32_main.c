@@ -25,17 +25,17 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int
   RegisterClassA(&window_class);
 
   HWND tray_handle = CreateWindowExA(0,
-                              "Paint.gg",
-                              "Tray Window",
-                              WS_OVERLAPPEDWINDOW,
-                              CW_USEDEFAULT,
-                              CW_USEDEFAULT,
-                              300,
-                              200,
-                              NULL,
-                              NULL,
-                              instance,
-                              NULL);
+                                     "Paint.gg",
+                                     "Tray Window",
+                                     WS_OVERLAPPEDWINDOW,
+                                     CW_USEDEFAULT,
+                                     CW_USEDEFAULT,
+                                     300,
+                                     200,
+                                     NULL,
+                                     NULL,
+                                     instance,
+                                     NULL);
 
   tray_menu = CreatePopupMenu();
   AppendMenuA(tray_menu, MF_STRING, ID_TRAY_EXIT, "Exit");
