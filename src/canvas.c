@@ -2,9 +2,22 @@
 #include "../include/rlgl.h"
 #include "../include/raymath.h"
 
+#define SMOOTH_ZOOM_ENABLE 1
+#define DRAWING_MODE_ENABLE 1
+
 const float zoom_speed = 8.0f;
 const float zoom_min   = 0.7f;
 const float zoom_max   = 64.0f;
+
+void TriggerZoom(Camera2D *camera, float *zoom_target, float wheel_move, Vector2 mouse_pos)
+{
+  Vector2 mouse_world_pos = GetScreenToWorld2D(mouse_pos, *camera);
+  float zoom_factor = 1.0f + (wheel_move * 0.1f);
+            
+  *zoom_target = Clamp(*zoom_target * zoom_factor, zoom_min, zoom_max);
+  camera->offset = mouse_pos;
+  camera->target = mouse_world_pos;
+}
 
 void Canvas(int width, int height, int true_width, int true_height)
 {
@@ -24,8 +37,8 @@ void Canvas(int width, int height, int true_width, int true_height)
   float zoom_target = 1.0f;
   Camera2D camera = {.zoom = 1.0f};
 
-  Rectangle src = {0.0f, 0.0f, (float)tex.width, (float)tex.height};
-  Rectangle dst = {0.0f, 0.0f, true_width, true_height};
+  Rectangle src  = {0.0f, 0.0f, (float)tex.width, (float)tex.height};
+  Rectangle dst  = {0.0f, 0.0f, true_width, true_height};
   Vector2 origin = {0, 0};
 
   RenderTexture2D drawing_plane = LoadRenderTexture(true_width, true_height);
@@ -33,34 +46,34 @@ void Canvas(int width, int height, int true_width, int true_height)
 
   while (!WindowShouldClose())
   {
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL))
+    float delta         = GetFrameTime();
+    Vector2 mouse_delta = GetMouseDelta();
+    Vector2 mouse_pos   = GetMousePosition();
+    float wheel_move    = GetMouseWheelMove();
+    
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_CONTROL))
     {
-      Vector2 mouse_dt = GetMouseDelta();
-      mouse_dt = Vector2Scale(mouse_dt, -1.0f/camera.zoom);
-      camera.target = Vector2Add(camera.target, mouse_dt);
+      mouse_delta = Vector2Scale(mouse_delta, -1.0f/camera.zoom);
+      camera.target = Vector2Add(camera.target, mouse_delta);
     }
-        
-    float mouse_wheel = GetMouseWheelMove();
+
+    #ifdef SMOOTH_ZOOM_ENABLE
+      camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * delta);
+    #endif
     if (GetMouseWheelMove() != 0)
     {
-      Vector2 mouse_world_pos = GetScreenToWorld2D(GetMousePosition(), camera);
-      float zoom_factor = 1.0f + (mouse_wheel * 0.1f);
-            
-      zoom_target = Clamp(zoom_target * zoom_factor, zoom_min, zoom_max);
-      camera.offset = GetMousePosition();
-      camera.target = mouse_world_pos;
+      TriggerZoom(&camera, &zoom_target, wheel_move, mouse_pos);
     }
-        
-    float dt = GetFrameTime();
-    camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * dt);
 
-    Vector2 current_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+    Vector2 current_mouse_world = GetScreenToWorld2D(mouse_pos, camera);
     BeginTextureMode(drawing_plane);
     {
-      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyUp(KEY_LEFT_CONTROL))
+			#ifdef DRAWING_MODE_ENABLE
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL))
       {
         float spacing = 0.5f;
-        Vector2 dt = Vector2Subtract(current_mouse_world, last_mouse_world);
+        Vector2 dt = Vector2Subtract(current_mouse_world,
+                                     last_mouse_world);
         float length = Vector2Length(dt);
 
         if (length > 0.0f)
@@ -74,6 +87,7 @@ void Canvas(int width, int height, int true_width, int true_height)
           }
         }
       }
+      #endif
     }
     EndTextureMode();
     
@@ -86,11 +100,11 @@ void Canvas(int width, int height, int true_width, int true_height)
       {
         DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
         DrawTextureRec(drawing_plane.texture,
-                       (Rectangle) { 0,
-                                     0,
-                                     drawing_plane.texture.width,
-                                     -drawing_plane.texture.height},
-                       (Vector2) { 0, 0 },
+                       (Rectangle){0,
+                                   0,
+                                   drawing_plane.texture.width,
+                                   -drawing_plane.texture.height},
+                       (Vector2){0, 0},
                        WHITE);
       }
       EndMode2D();
