@@ -6,12 +6,13 @@ const float zoom_speed = 8.0f;
 const float zoom_min   = 0.7f;
 const float zoom_max   = 64.0f;
 
-void canvas(int width, int height, int true_width, int true_height)
+void Canvas(int width, int height, int true_width, int true_height)
 {
   SetConfigFlags(FLAG_VSYNC_HINT |
                  FLAG_WINDOW_TOPMOST |
                  FLAG_WINDOW_RESIZABLE |
                  FLAG_WINDOW_UNDECORATED);
+  
 	InitWindow(width, height, "Paint.gg");
   SetWindowPosition(0, 0);
 
@@ -100,7 +101,7 @@ void canvas(int width, int height, int true_width, int true_height)
   UnloadRenderTexture(drawing_plane);
 }
 
-void destroy_canvas(void)
+void DestroyCanvas(void)
 {
   CloseWindow();
 }

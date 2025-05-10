@@ -1,6 +1,6 @@
 #include <windows.h>
 
-void take_screenshot(HDC screen, int width, int height)
+void TakeCustomScreenshot(HDC screen, int width, int height)
 {
 	HDC context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
@@ -11,7 +11,7 @@ void take_screenshot(HDC screen, int width, int height)
   if (sig != 0)
   {
     LPCSTR filename = "screenshot.bmp";
-    export_bitmap(bmp_handle, context, filename);        
+    ExportBitmap(bmp_handle, context, filename);        
   }
   else
   {
@@ -23,7 +23,7 @@ void take_screenshot(HDC screen, int width, int height)
   ReleaseDC(NULL, screen);
 }
 
-int export_bitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
+int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 {
   BITMAP bmp;
   GetObject(bitmap_handle, sizeof(BITMAP), &bmp);
@@ -86,7 +86,7 @@ int export_bitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   return 1;
 }
 
-LRESULT CALLBACK kbd_hook_callback(int hook_code, WPARAM w_param, LPARAM l_param)
+LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
 
@@ -96,7 +96,7 @@ LRESULT CALLBACK kbd_hook_callback(int hook_code, WPARAM w_param, LPARAM l_param
     {
     case VK_ESCAPE:
       DeleteFile("screenshot.bmp");
-      destroy_canvas();
+      DestroyCanvas();
       break;
       
     case 'S':
@@ -108,8 +108,8 @@ LRESULT CALLBACK kbd_hook_callback(int hook_code, WPARAM w_param, LPARAM l_param
         int true_width = GetSystemMetrics(SM_CXSCREEN);
         int true_height = GetSystemMetrics(SM_CYSCREEN);
 
-        take_screenshot(screen, width, height);
-        canvas(width, height, true_width, true_height);
+        TakeCustomScreenshot(screen, width, height);
+        Canvas(width, height, true_width, true_height);
       }
       break;
 

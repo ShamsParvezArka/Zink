@@ -3,15 +3,15 @@
 #include <windows.h>
 #include <stdio.h>
 
-LRESULT CALLBACK kbd_hook_callback(int hook_code, WPARAM w_param, LPARAM l_param);
-LRESULT CALLBACK tray_callback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param);
-void             take_screenshot(HDC screen, int width, int height);
-int              export_bitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
-void             canvas(int width, int height, int true_width, int true_height);
-void             destroy_canvas(void);
-
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
+
+LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_param);
+LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param);
+void             TakeCustomScreenshot(HDC screen, int width, int height);
+int              ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
+void             Canvas(int width, int height, int true_width, int true_height);
+void             DestroyCanvas(void);
 
 NOTIFYICONDATA nid = {0};
 HMENU tray_menu = NULL;
@@ -19,7 +19,7 @@ HMENU tray_menu = NULL;
 int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int show_cmd)
 {
   WNDCLASSA window_class = {0};
-  window_class.lpfnWndProc = tray_callback;
+  window_class.lpfnWndProc = TrayCallback;
   window_class.hInstance = instance;
   window_class.lpszClassName = "Paint.gg";
   RegisterClassA(&window_class);
@@ -30,8 +30,8 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int
                                      WS_OVERLAPPEDWINDOW,
                                      CW_USEDEFAULT,
                                      CW_USEDEFAULT,
-                                     300,
-                                     200,
+                                     0,
+                                     0,
                                      NULL,
                                      NULL,
                                      instance,
@@ -49,7 +49,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int
   strcpy(nid.szTip, "Paint.gg");
   Shell_NotifyIcon(NIM_ADD, &nid);
   
-  HHOOK kbd_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &kbd_hook_callback, 0, 0);
+  HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &GlobalHookCallback, 0, 0);
 
   while (1)
   {
@@ -69,7 +69,7 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int
   return 0;
 }
 
-LRESULT CALLBACK tray_callback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param)
+LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param)
 {
   switch (message)
   {
@@ -103,3 +103,4 @@ LRESULT CALLBACK tray_callback(HWND handle, UINT message, WPARAM w_param, LPARAM
 
   return DefWindowProc(handle, message, w_param, l_param);
 }
+
