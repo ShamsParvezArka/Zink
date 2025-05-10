@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <stdbool.h>
 
 void TakeCustomScreenshot(HDC screen, int width, int height)
 {
@@ -89,14 +90,19 @@ int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
+  static bool drawing_mode = false;
 
   if (w_param == WM_KEYDOWN || w_param == WM_SYSKEYDOWN)
   {
     switch (key->vkCode)
     {
     case VK_ESCAPE:
+      if (drawing_mode)
+      {
+        DestroyCanvas();        
+      }
+      drawing_mode = false;
       DeleteFile("screenshot.bmp");
-      DestroyCanvas();
       break;
       
     case 'S':
@@ -108,8 +114,12 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
         int true_width = GetSystemMetrics(SM_CXSCREEN);
         int true_height = GetSystemMetrics(SM_CYSCREEN);
 
-        TakeCustomScreenshot(screen, width, height);
-        Canvas(width, height, true_width, true_height);
+        if (!drawing_mode)
+        {
+          drawing_mode = true;          
+          TakeCustomScreenshot(screen, width, height);
+          Canvas(width, height, true_width, true_height);
+        }
       }
       break;
 
