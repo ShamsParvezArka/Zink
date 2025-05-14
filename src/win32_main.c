@@ -10,7 +10,7 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
 LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param);
 void             TakeCustomScreenshot(HDC screen, int width, int height);
 int              ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
-void             Canvas(int width, int height, int true_width, int true_height);
+void             RenderCanvas(int width, int height, int true_width, int true_height);
 void             DestroyCanvas(void);
 
 NOTIFYICONDATA nid = {0};
@@ -36,7 +36,6 @@ int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int
                                      NULL,
                                      instance,
                                      NULL);
-
   tray_menu = CreatePopupMenu();
   AppendMenuA(tray_menu, MF_STRING, ID_TRAY_EXIT, "Exit");
 
@@ -91,7 +90,7 @@ LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM 
       return 0;
     }
 		break;
-    
+
   case WM_DESTROY:
     Shell_NotifyIcon(NIM_DELETE, &nid);
     PostQuitMessage(0);

@@ -1,6 +1,7 @@
 #include "../include/raylib.h"
 #include "../include/rlgl.h"
 #include "../include/raymath.h"
+#include <stdlib.h>
 
 #define SMOOTH_ZOOM_ENABLE 1
 #define DRAWING_MODE_ENABLE 1
@@ -8,6 +9,56 @@
 const float zoom_speed = 8.0f;
 const float zoom_min   = 0.7f;
 const float zoom_max   = 64.0f;
+bool drawing_mode = false;
+
+typedef struct History
+{
+  size_t index;
+  size_t top;
+  size_t count;
+  RenderTexture2D *buffers;
+} History;
+
+History HistoryInit(size_t size)
+{
+  History h = {};
+  h.index = 0;
+  h.top   = 0;
+  h.count = 0;
+  h.buffers = malloc(sizeof(RenderTexture2D) * size);
+
+  return h;
+}
+
+void HistoryPush(History *h, RenderTexture2D main_buffer)
+{
+  RenderTexture2D back_buffer = LoadRenderTexture(main_buffer.texture.width,
+                                                  main_buffer.texture.height);
+  BeginTextureMode(back_buffer);
+  {
+		Rectangle dimension = {0, 0, main_buffer.texture.width, -main_buffer.texture.height};
+    Vector2   position  = {0, 0};
+    DrawTextureRec(main_buffer.texture, dimension, position, WHITE);
+  }
+  EndTextureMode();
+  
+  h->buffers[h->index] = back_buffer;
+  h->top = h->index;
+  h->index++;
+  h->count++;
+}
+
+void HistoryUndo(History *h, RenderTexture2D *main_buffer)
+{
+  if (h->top > 0) {h->top--;}
+  *main_buffer = h->buffers[h->top];
+}
+
+void HistoryRedo(History *h, RenderTexture2D *main_buffer)
+{
+  if (h->top < h->count - 1) {h->top++;}
+  *main_buffer = h->buffers[h->top];
+}
 
 void TriggerZoom(Camera2D *camera, float *zoom_target, float wheel_move, Vector2 mouse_pos)
 {
@@ -19,7 +70,7 @@ void TriggerZoom(Camera2D *camera, float *zoom_target, float wheel_move, Vector2
   camera->target = mouse_world_pos;
 }
 
-void Canvas(int width, int height, int true_width, int true_height)
+void RenderCanvas(int width, int height, int true_width, int true_height)
 {
   SetConfigFlags(FLAG_VSYNC_HINT |
                  FLAG_WINDOW_TOPMOST |
@@ -41,7 +92,8 @@ void Canvas(int width, int height, int true_width, int true_height)
   Rectangle dst  = {0.0f, 0.0f, true_width, true_height};
   Vector2 origin = {0, 0};
 
-  RenderTexture2D drawing_plane = LoadRenderTexture(true_width, true_height);
+  History undo_history = HistoryInit((size_t)20);
+  RenderTexture2D main_buffer = LoadRenderTexture(true_width, true_height);
   Vector2 last_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
 
   while (!WindowShouldClose())
@@ -50,8 +102,18 @@ void Canvas(int width, int height, int true_width, int true_height)
     Vector2 mouse_delta = GetMouseDelta();
     Vector2 mouse_pos   = GetMousePosition();
     float wheel_move    = GetMouseWheelMove();
+
+    if (IsKeyPressed(KEY_B)) {drawing_mode = !drawing_mode;}
+    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Z))
+    {
+			HistoryUndo(&undo_history, &main_buffer);
+    }
+    if (IsKeyDown(KEY_LEFT_CONTROL) && IsKeyPressed(KEY_Y))
+    {
+			HistoryRedo(&undo_history, &main_buffer);
+    }
     
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsKeyDown(KEY_LEFT_CONTROL))
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !drawing_mode)
     {
       mouse_delta = Vector2Scale(mouse_delta, -1.0f/camera.zoom);
       camera.target = Vector2Add(camera.target, mouse_delta);
@@ -66,10 +128,10 @@ void Canvas(int width, int height, int true_width, int true_height)
     }
 
     Vector2 current_mouse_world = GetScreenToWorld2D(mouse_pos, camera);
-    BeginTextureMode(drawing_plane);
+    BeginTextureMode(main_buffer);
     {
 			#ifdef DRAWING_MODE_ENABLE
-      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && IsKeyDown(KEY_LEFT_CONTROL))
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && drawing_mode)
       {
         float spacing = 0.5f;
         Vector2 dt = Vector2Subtract(current_mouse_world,
@@ -87,6 +149,11 @@ void Canvas(int width, int height, int true_width, int true_height)
           }
         }
       }
+
+      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && drawing_mode)
+      {
+        HistoryPush(&undo_history, main_buffer);
+      }
       #endif
     }
     EndTextureMode();
@@ -99,11 +166,11 @@ void Canvas(int width, int height, int true_width, int true_height)
       BeginMode2D(camera);
       {
         DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
-        DrawTextureRec(drawing_plane.texture,
+        DrawTextureRec(main_buffer.texture,
                        (Rectangle){0,
                                    0,
-                                   drawing_plane.texture.width,
-                                   -drawing_plane.texture.height},
+                                   main_buffer.texture.width,
+                                   -main_buffer.texture.height},
                        (Vector2){0, 0},
                        WHITE);
       }
@@ -112,7 +179,7 @@ void Canvas(int width, int height, int true_width, int true_height)
     EndDrawing();
   }
   UnloadTexture(tex);
-  UnloadRenderTexture(drawing_plane);
+  UnloadRenderTexture(main_buffer);
 }
 
 void DestroyCanvas(void)

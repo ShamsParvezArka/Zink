@@ -7,7 +7,7 @@ void TakeCustomScreenshot(HDC screen, int width, int height)
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
 
   SelectObject(context, bmp_handle);
-    
+
   BOOL sig = BitBlt(context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
   if (sig != 0)
   {
@@ -118,7 +118,7 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
         {
           drawing_mode = true;          
           TakeCustomScreenshot(screen, width, height);
-          Canvas(width, height, true_width, true_height);
+          RenderCanvas(width, height, true_width, true_height);
         }
       }
       break;
