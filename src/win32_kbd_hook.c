@@ -99,12 +99,11 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
     case VK_ESCAPE:
       if (drawing_mode)
       {
-        DestroyCanvas();        
+        DestroyCanvas();
       }
       drawing_mode = false;
       DeleteFile("screenshot.bmp");
-      break;
-      
+      break;      
     case 'S':
       if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
       {
@@ -113,7 +112,7 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
         int height = GetDeviceCaps(screen, DESKTOPVERTRES);
         int true_width = GetSystemMetrics(SM_CXSCREEN);
         int true_height = GetSystemMetrics(SM_CYSCREEN);
-
+        
         if (!drawing_mode)
         {
           drawing_mode = true;          
@@ -122,7 +121,6 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
         }
       }
       break;
-
     default:
       break;
     }

@@ -2,6 +2,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
@@ -14,7 +15,7 @@ void             RenderCanvas(int width, int height, int true_width, int true_he
 void             DestroyCanvas(void);
 
 NOTIFYICONDATA nid = {0};
-HMENU tray_menu = NULL;
+HMENU tray_menu    = NULL;
 
 int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int show_cmd)
 {
@@ -81,7 +82,6 @@ LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM 
       TrackPopupMenu(tray_menu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, handle, NULL);
     }
     break;
-
   case WM_COMMAND:
     if (LOWORD(w_param) == ID_TRAY_EXIT)
     {
@@ -90,12 +90,10 @@ LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM 
       return 0;
     }
 		break;
-
   case WM_DESTROY:
     Shell_NotifyIcon(NIM_DELETE, &nid);
     PostQuitMessage(0);
     return 0;
-
   default:
     break;
   }

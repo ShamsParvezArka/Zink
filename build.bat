@@ -9,7 +9,7 @@ set cl_lib=     opengl32.lib kernel32.lib user32.lib gdi32.lib winmm.lib msvcrt.
 set cl_exclude= /NODEFAULTLIB:libcmt
 set cl_target=  src\win32_main.c ^
                 src\win32_kbd_hook.c ^
-                src\canvas.c
+                src\renderer.c
 set cl_output=  /Fe:debug\Paintgg.exe
 
 call cl %cl_output% %cl_target% %cl_general% %cl_debug% %cl_include% %cl_link% %cl_lib% %cl_exclude%
