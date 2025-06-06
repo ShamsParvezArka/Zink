@@ -3,21 +3,22 @@
 #include <windows.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "types.h"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
 
-LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_param);
+LRESULT CALLBACK GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param);
 LRESULT CALLBACK TrayCallback(HWND handle, UINT message, WPARAM w_param, LPARAM l_param);
-void             TakeCustomScreenshot(HDC screen, int width, int height);
+void             TakeCustomScreenshot(HDC screen, I32 width, I32 height);
 int              ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
-void             RenderCanvas(int width, int height, int true_width, int true_height);
+void             RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height);
 void             DestroyCanvas(void);
 
 NOTIFYICONDATA nid = {0};
 HMENU tray_menu    = NULL;
 
-int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, int show_cmd)
+int APIENTRY WinMain(HINSTANCE instance, HINSTANCE instance_prev, PSTR args, I32 show_cmd)
 {
   WNDCLASSA window_class = {0};
   window_class.lpfnWndProc = TrayCallback;

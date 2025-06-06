@@ -1,7 +1,8 @@
 #include <windows.h>
 #include <stdbool.h>
+#include "types.h"
 
-void TakeCustomScreenshot(HDC screen, int width, int height)
+void TakeCustomScreenshot(HDC screen, I32 width, I32 height)
 {
 	HDC context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
@@ -21,7 +22,6 @@ void TakeCustomScreenshot(HDC screen, int width, int height)
 
   DeleteObject(bmp_handle);
   DeleteDC(context);
-  ReleaseDC(NULL, screen);
 }
 
 int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
@@ -42,7 +42,7 @@ int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   bmp_info_header.biClrUsed = 0;
   bmp_info_header.biClrImportant = 0;
 
-  int height = abs(bmp_info_header.biHeight);
+  I32 height = abs(bmp_info_header.biHeight);
   DWORD bmp_size = ((bmp.bmWidth * bmp_info_header.biBitCount + 31) / 32) * 4 * height;
   HANDLE dbi = GlobalAlloc(GHND, bmp_size);
   char *lpbitmap = (char*)GlobalLock(dbi);
@@ -57,9 +57,9 @@ int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 	if (sig == 0)
   {
     printf("ERROR: Failed to retrieve data from bitmap\n");
-    return 0;
+    return 0; 
   }
-    
+
   HANDLE file_handle = CreateFileA(filename,
                                    GENERIC_WRITE,
                                    0,
@@ -87,7 +87,7 @@ int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   return 1;
 }
 
-LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_param)
+LRESULT CALLBACK GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
   static bool drawing_mode = false;
@@ -97,10 +97,6 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
     switch (key->vkCode)
     {
     case VK_ESCAPE:
-      if (drawing_mode)
-      {
-        DestroyCanvas();
-      }
       drawing_mode = false;
       DeleteFile("screenshot.bmp");
       break;      
@@ -108,15 +104,16 @@ LRESULT CALLBACK GlobalHookCallback(int hook_code, WPARAM w_param, LPARAM l_para
       if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
       {
         HDC screen = GetDC(NULL);
-        int width = GetDeviceCaps(screen, DESKTOPHORZRES);
-        int height = GetDeviceCaps(screen, DESKTOPVERTRES);
-        int true_width = GetSystemMetrics(SM_CXSCREEN);
-        int true_height = GetSystemMetrics(SM_CYSCREEN);
+        I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
+        I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);
+        I32 true_width = GetSystemMetrics(SM_CXSCREEN);
+        I32 true_height = GetSystemMetrics(SM_CYSCREEN);
         
         if (!drawing_mode)
         {
           drawing_mode = true;          
           TakeCustomScreenshot(screen, width, height);
+          ReleaseDC(NULL, screen);
           RenderCanvas(width, height, true_width, true_height);
         }
       }

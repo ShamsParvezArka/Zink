@@ -1,41 +1,44 @@
+#include <stdlib.h>
 #include "../include/raylib.h"
 #include "../include/rlgl.h"
 #include "../include/raymath.h"
 #include "renderer.h"
-#include <stdlib.h>
+#include "types.h"
 
-void RenderCanvas(int width, int height, int true_width, int true_height)
+void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
 {
   SetConfigFlags(canvas_properties);
 	InitWindow(width, height, "Paint.gg");
-  SetWindowPosition(0, 0);
+  SetWindowPosition(init_pos_x, init_pos_y);
+  SetWindowFocused();
 
   Image img = LoadImage("screenshot.bmp");
   Texture2D tex = LoadTextureFromImage(img);
   UnloadImage(img);
   SetTextureFilter(tex, TEXTURE_FILTER_BILINEAR);
 
-  float zoom_target = 1.0f;
+  F32 zoom_target = 1.0f;
   Camera2D camera = {.zoom = 1.0f};
 
-  Rectangle src  = {0.0f, 0.0f, (float)tex.width, (float)tex.height};
+  Rectangle src  = {0.0f, 0.0f, (F32)tex.width, (F32)tex.height};
   Rectangle dst  = {0.0f, 0.0f, true_width, true_height};
-  Vector2 origin = {0, 0};
+  V2 origin = {0, 0};
 
-  History undo_history = HistoryInit((size_t)20);
+  History undo_history = HistoryInit((U64)20);
+  I32 foo = 0;
   RenderTexture2D main_buffer = LoadRenderTexture(true_width, true_height);
-  Vector2 last_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
+  V2 last_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
 
-  int drawing_mode = 0;
+  I32 drawing_mode = 0;
   
   while (!WindowShouldClose())
   {
-    float delta         = GetFrameTime();
-    float wheel_move    = GetMouseWheelMove();
-    Vector2 mouse_delta = GetMouseDelta();
-    Vector2 mouse_pos   = GetMousePosition();
+    F32 delta = GetFrameTime();
+    F32 wheel_move = GetMouseWheelMove();
+    V2 mouse_delta = GetMouseDelta();
+    V2 mouse_pos   = GetMousePosition();
 
-    int e = GetKeyPressed();
+    I32 e = GetKeyPressed();
     switch (e)
     {
     case KEY_B:
@@ -54,8 +57,16 @@ void RenderCanvas(int width, int height, int true_width, int true_height)
       }
       break;
     default:
-
       break;
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE))
+    {
+      if (IsWindowState(FLAG_WINDOW_UNDECORATED))
+      {
+        ClearWindowState(FLAG_WINDOW_UNDECORATED);
+        break;
+      }
     }
 
     if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !drawing_mode)
@@ -67,16 +78,15 @@ void RenderCanvas(int width, int height, int true_width, int true_height)
     {
       TriggerZoom(&camera, &zoom_target, wheel_move, mouse_pos);        
     }
-    camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * delta);
     
-    Vector2 current_mouse_world = GetScreenToWorld2D(mouse_pos, camera);
+    V2 current_mouse_world = GetScreenToWorld2D(mouse_pos, camera);
     BeginTextureMode(main_buffer);
     {
       if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && drawing_mode)
       {
         DrawWithLinearInterpolation(0.5f, RED, current_mouse_world, last_mouse_world);
       }
-      if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && drawing_mode)
+      else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && drawing_mode)
       {
         HistoryPush(&undo_history, main_buffer);          
       }
@@ -84,6 +94,7 @@ void RenderCanvas(int width, int height, int true_width, int true_height)
     EndTextureMode();
 
     last_mouse_world = current_mouse_world;
+    camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * delta);
 
     BeginDrawing();
     {
@@ -91,13 +102,12 @@ void RenderCanvas(int width, int height, int true_width, int true_height)
       BeginMode2D(camera);
       {
         DrawTexturePro(tex, src, dst, origin, 0.0f, WHITE);
-        DrawTextureRec(main_buffer.texture,
-                       (Rectangle){0,
-                                   0,
-                                   main_buffer.texture.width,
-                                   -main_buffer.texture.height},
-                       (Vector2){0, 0},
-                       WHITE);
+        Rectangle src = {0,
+                         0,
+                         main_buffer.texture.width,
+                         -main_buffer.texture.height};
+        V2 pos = {0, 0};
+        DrawTextureRec(main_buffer.texture, src, pos, WHITE);
       }
       EndMode2D();
     }
@@ -105,58 +115,57 @@ void RenderCanvas(int width, int height, int true_width, int true_height)
   }
   UnloadTexture(tex);
   UnloadRenderTexture(main_buffer);
+  CloseWindow();
 }
 
-History HistoryInit(size_t size)
+History HistoryInit(U64 size)
 {
-  History h = {.index = 0,
-               .top   = 0,
-               .count = 0,
+  History h = {.count = 0,
+               .capacity = size,
                .buffers = malloc(sizeof(*(h.buffers)) * size)};
 
   return h;
 }
 
-void HistoryPush(History *h, RenderTexture2D main_buffer)
+void HistoryPush(History *h, RenderTexture2D buffer)
 {
-  RenderTexture2D back_buffer = LoadRenderTexture(main_buffer.texture.width,
-                                                  main_buffer.texture.height);
+  RenderTexture2D back_buffer = LoadRenderTexture(buffer.texture.width,
+                                                  buffer.texture.height);
   BeginTextureMode(back_buffer);
   {
-		Rectangle dimension = {0, 0, main_buffer.texture.width, -main_buffer.texture.height};
-    Vector2   position  = {0, 0};
-    DrawTextureRec(main_buffer.texture, dimension, position, WHITE);
+		Rectangle dimension = {0, 0, buffer.texture.width, -buffer.texture.height};
+    V2 position  = {0, 0};
+    DrawTextureRec(buffer.texture, dimension, position, WHITE);
   }
   EndTextureMode();
   
-  h->buffers[h->index] = back_buffer;
-  h->top = h->index;
-  h->index++;
+  h->buffers[h->count] = back_buffer;
   h->count++;
+  memset(h->buffers + h->count, 0, h->capacity);
 }
 
-void HistoryUndo(History *h, RenderTexture2D *main_buffer)
+void HistoryUndo(History *h, RenderTexture2D *buffer)
 {
-  if (h->top > 0)
+  if (h->count > 0)
   {
-    h->top--;
+    h->count--;
   }
-  *main_buffer = h->buffers[h->top];
+  *buffer = h->buffers[h->count];
 }
 
-void HistoryRedo(History *h, RenderTexture2D *main_buffer)
+void HistoryRedo(History *h, RenderTexture2D *buffer)
 {
-  if (h->top < h->count - 1)
+  if (h->count < h->capacity - 1)
   {
-    h->top++;
+    h->count++;
   }
-  *main_buffer = h->buffers[h->top];
+  *buffer = h->buffers[h->count];
 }
 
-void TriggerZoom(Camera2D *camera, float *zoom_target, float wheel_move, Vector2 mouse_pos)
+void TriggerZoom(Camera2D *camera, F32 *zoom_target, F32 wheel_move, V2 mouse_pos)
 {
-  Vector2 mouse_world_pos = GetScreenToWorld2D(mouse_pos, *camera);
-  float zoom_factor = 1.0f + (wheel_move * 0.1f);
+  V2 mouse_world_pos = GetScreenToWorld2D(mouse_pos, *camera);
+  F32 zoom_factor = 1.0f + (wheel_move * 0.1f);
             
   *zoom_target = Clamp(*zoom_target * zoom_factor, zoom_min, zoom_max);
   camera->offset = mouse_pos;
@@ -168,19 +177,18 @@ void DestroyCanvas(void)
   CloseWindow();
 }
 
-void DrawWithLinearInterpolation(float spacing, Color color, Vector2 cmw, Vector2 lmw)
+void DrawWithLinearInterpolation(F32 spacing, Color color, V2 cmw, V2 lmw)
 {
-  Vector2 dt = Vector2Subtract(cmw, lmw);
-  float length = Vector2Length(dt);
+  V2 dt = Vector2Subtract(cmw, lmw);
+  F32 length = Vector2Length(dt);
 
   if (length > 0.0f)
   {
-    Vector2 direction = Vector2Scale(dt, 1.0f / length);
-    for (float i = 0; i <= length; i += spacing)
+    V2 direction = Vector2Scale(dt, 1.0f / length);
+    for (F32 i = 0; i <= length; i += spacing)
     {
-      Vector2 point = Vector2Add(lmw, Vector2Scale(direction, i));
+      V2 point = Vector2Add(lmw, Vector2Scale(direction, i));
       DrawCircleV(point, 2.0f, color);
     }
   }
 }
-
