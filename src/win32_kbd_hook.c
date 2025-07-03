@@ -100,7 +100,7 @@ LRESULT CALLBACK GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_para
       drawing_mode = false;
       DeleteFile("screenshot.bmp");
       break;      
-    case 'S':
+    case 'D':
       if (GetAsyncKeyState(VK_CONTROL) & 0x8000)
       {
         HDC screen = GetDC(NULL);

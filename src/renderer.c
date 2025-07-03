@@ -4,6 +4,7 @@
 #include "../include/raymath.h"
 #include "renderer.h"
 #include "types.h"
+#include "ui_components.h"
 
 void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
 {
@@ -29,7 +30,38 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
   RenderTexture2D main_buffer = LoadRenderTexture(true_width, true_height);
   V2 last_mouse_world = GetScreenToWorld2D(GetMousePosition(), camera);
 
-  I32 drawing_mode = 0;
+  //TODO(arka): make this more organized
+  Image img_move = LoadImage("../assets/move.png");
+	Button btn_move = {0};
+  btn_move.texture = LoadTextureFromImage(img_move);
+  btn_move.rect = (Rectangle){20, 20, BUTTON_SIZE, BUTTON_SIZE};
+  btn_move.state = false;
+  UnloadImage(img_move);
+  
+  Image img_draw = LoadImage("../assets/draw.png");
+  Button btn_draw = {0};
+  btn_draw.texture = LoadTextureFromImage(img_draw);
+  btn_draw.rect = (Rectangle){20, btn_move.rect.y + BUTTON_SIZE + BUTTON_GAP, BUTTON_SIZE, BUTTON_SIZE};
+  btn_draw.state = false;
+  UnloadImage(img_draw);
+
+  Image img_eraser = LoadImage("../assets/eraser.png");
+  Button btn_eraser = {0};
+  btn_eraser.texture = LoadTextureFromImage(img_eraser);
+  btn_eraser.rect = (Rectangle){20, btn_draw.rect.y + BUTTON_SIZE + BUTTON_GAP, BUTTON_SIZE, BUTTON_SIZE};
+  btn_eraser.state = false;
+  UnloadImage(img_eraser);
+
+  Button *buttons = malloc(sizeof(Button) * 3);
+  buttons[BUTTON_MOVE] = btn_move;
+  buttons[BUTTON_DRAW] = btn_draw;
+  buttons[BUTTON_ERASER] = btn_eraser;
+
+  Rectangle toolbar_area = {buttons[0].rect.x,
+  													buttons[0].rect.y,
+                            BUTTON_SIZE,
+                            buttons[0].rect.y + buttons[2].rect.y + buttons[2].rect.height};
+  I32 current_button = BUTTON_MOVE;
   
   while (!WindowShouldClose())
   {
@@ -42,7 +74,10 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
     switch (e)
     {
     case KEY_B:
-      drawing_mode = !drawing_mode;
+      current_button = BUTTON_DRAW;
+      break;
+    case KEY_M:
+      current_button = BUTTON_MOVE;
       break;
     case KEY_Z:
       if (IsKeyDown(KEY_LEFT_CONTROL))
@@ -69,7 +104,7 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
       }
     }
 
-    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !drawing_mode)
+    if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && current_button == BUTTON_MOVE)
     {
       mouse_delta = Vector2Scale(mouse_delta, -1.0f/camera.zoom);
       camera.target = Vector2Add(camera.target, mouse_delta);
@@ -82,11 +117,13 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
     V2 current_mouse_world = GetScreenToWorld2D(mouse_pos, camera);
     BeginTextureMode(main_buffer);
     {
-      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) && drawing_mode)
+      if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) &&
+          current_button == BUTTON_DRAW &&
+          !CheckCollisionPointRec(GetMousePosition(), toolbar_area))
       {
-        DrawWithLinearInterpolation(0.5f, RED, current_mouse_world, last_mouse_world);
+        DrawWithLinearInterpolation(brush_size, RED, current_mouse_world, last_mouse_world);
       }
-      else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && drawing_mode)
+      else if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT) && current_button == BUTTON_DRAW)
       {
         HistoryPush(&undo_history, main_buffer);          
       }
@@ -96,6 +133,26 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
     last_mouse_world = current_mouse_world;
     camera.zoom = Lerp(camera.zoom, zoom_target, zoom_speed * delta);
 
+		//TODO(arka): make this more organized    
+    for (I32 i = 0; i < 3; i++)
+    {
+      if (CheckCollisionPointRec(GetMousePosition(), buttons[i].rect) && IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
+      {
+        if (i == BUTTON_MOVE)
+        {
+          current_button = BUTTON_MOVE;
+        }
+        else if (i == BUTTON_DRAW)
+        {
+          current_button = BUTTON_DRAW;
+        }
+        else if (i == BUTTON_ERASER)
+        {
+          current_button = BUTTON_ERASER;          
+        }
+      }      
+    }
+    
     BeginDrawing();
     {
       ClearBackground((Color){13, 13, 13});
@@ -110,6 +167,21 @@ void RenderCanvas(I32 width, I32 height, I32 true_width, I32 true_height)
         DrawTextureRec(main_buffer.texture, src, pos, WHITE);
       }
       EndMode2D();
+
+      //TODO(arka): wrap this chunk into a callback function
+      for (I32 i = 0; i < 3; i++)
+      {
+        if (i == current_button)
+        {
+          DrawRectangleRounded(buttons[i].rect, 0.2f, 100, Fade(RAYWHITE, fading_factor + 0.3));                    
+        }
+        else
+        {
+          DrawRectangleRounded(buttons[i].rect, 0.2f, 100, Fade(RAYWHITE, fading_factor));          
+        }
+        DrawTexture(buttons[i].texture, buttons[i].rect.x, buttons[i].rect.y, WHITE);
+      }
+      
     }
     EndDrawing();
   }
