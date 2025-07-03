@@ -1,6 +1,8 @@
 @echo off
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
 
+if not exist debug mkdir debug
+
 set cl_general= /nologo /ZI
 set cl_debug= /Fd:debug\ /Fo:debug\\
 set cl_include= /I".\include"
