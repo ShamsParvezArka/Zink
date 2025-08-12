@@ -180,6 +180,14 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM
 
 I32 WINAPI wWinMain(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
 {
+#if ZINK_DEBUG_MODE
+  AllocConsole();
+  FILE* fp;
+  freopen_s(&fp, "CONOUT$", "w", stdout);
+  freopen_s(&fp, "CONOUT$", "w", stderr);
+  freopen_s(&fp, "CONIN$",  "r", stdin);
+#endif
+  
   WNDCLASS window_class = {};
   
   window_class.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
