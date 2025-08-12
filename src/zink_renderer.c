@@ -24,16 +24,16 @@ void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
 {
   ZINK_Renderer renderer_handle = {};
   String8 driver = "direct3d11";
-  ZINK_RendererInit(&renderer_handle, width, height, title, driver, true);
+  ZINK_InitRenderer(&renderer_handle, width, height, title, driver, true);
 
   ZINK_Context context = {};
-  ZINK_ContextInit(&renderer_handle, &context);
+  ZINK_InitContext(&renderer_handle, &context);
 
   ZINK_Toolbar toolbar = {};
   String8 list[3] = {"..\\assets\\move.png",
                      "..\\assets\\draw.png",
                      "..\\assets\\eraser.png"};
-  if (!ZINK_ToolbarInit(&renderer_handle, &toolbar, list, 3))
+  if (!ZINK_InitToolbar(&renderer_handle, &toolbar, list, 3))
   {
     printf("ZINK_Error: failed to initialize toolbar\n");
   }
@@ -43,23 +43,17 @@ void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
   running = true;
   while (running)
   {
-    ZINK_UpdateInputState(&input);
-
     last_tick = current_tick;
     current_tick = SDL_GetTicks();
     delta = (current_tick - last_tick) / 1000.0f;
-    ZINK_UpdateCamera(&context.camera, &input, delta);
     
-    context.dest.x = context.camera.offset.x - context.camera.target.x * context.camera.zoom;
-    context.dest.y = context.camera.offset.y - context.camera.target.y * context.camera.zoom;    
-    context.dest.w = context.texture_width * context.camera.zoom;
-    context.dest.h = context.texture_height * context.camera.zoom;
-
+    ZINK_UpdateInputState(&input);
+    ZINK_UpdateCamera(&context.camera, &input, delta);
     ZINK_Update(&renderer_handle, &context, delta);
   }
 
-	ZINK_ContextDestroy(&context);
-  ZINK_RendererDestroy(&renderer_handle);
+	ZINK_DestroyContext(&context);
+  ZINK_DestroyRenderer(&renderer_handle);
   SDL_Quit();
 }
 
@@ -181,10 +175,13 @@ _internal void ZINK_UpdateInputState(ZINK_InputState *input)
   }
 }
 
-_internal void ZINK_Update(ZINK_Renderer *renderer_handle,
-                           ZINK_Context *context,
-                           F32 dt)
+_internal void ZINK_Update(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt)
 {
+  context->dest.x = context->camera.offset.x - context->camera.target.x * context->camera.zoom;
+  context->dest.y = context->camera.offset.y - context->camera.target.y * context->camera.zoom;    
+  context->dest.w = context->texture_width * context->camera.zoom;
+  context->dest.h = context->texture_height * context->camera.zoom;
+  
   SDL_SetRenderDrawColor(renderer_handle->renderer, 29, 29, 29, 255);
   SDL_RenderClear(renderer_handle->renderer);
   SDL_RenderTexture(renderer_handle->renderer, context->texture, NULL, &context->dest);
