@@ -1,9 +1,12 @@
-#include "types.h"
-#include "../include/SDL3/SDL.h"
-#include "../include/SDL_image.h"
+#ifndef ZINK_RENDERER_H
+#define ZINK_RENDERER_H
 
+// renderer
 #define ZINC_VSYNC_ENABLE  1
 #define ZINC_VSYNC_DISABLE 0
+// ui
+#define BUTTON_SIZE 30
+#define BUTTON_GAP 10
 
 typedef struct ZINK_Renderer ZINK_Renderer;
 struct ZINK_Renderer
@@ -45,12 +48,51 @@ struct ZINK_Context
   F32 texture_height;
 };
 
+typedef struct ZINK_Button ZINK_Button;
+struct ZINK_Button
+{
+  SDL_Texture *texture;
+  SDL_FRect dest;
+  B32 active;
+};
+
+typedef struct ZINK_Toolbar ZINK_Toolbar;
+struct ZINK_Toolbar
+{
+  ZINK_Button *tools;
+  U32 capacity;  
+  U32 count;
+};
+
+typedef struct ZINK_InputState ZINK_InputState;
+struct ZINK_InputState
+{
+  F32 mouse_x;
+  F32 mouse_y;
+  F32 world_x;
+  F32 world_y;
+	F32 wheel_delta;
+  
+  B32 mouse_drag;
+  B32 mouse_down[5];
+  B32 mouse_released[5];
+  B32 key_down[SDL_SCANCODE_COUNT];
+  B32 key_released[SDL_SCANCODE_COUNT];
+};
+
 void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title);
 
-_internal B32  ZINK_RendererInit(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag);
-_internal B32  ZINK_ContextInit(ZINK_Renderer *renderer_handle, ZINK_Context *context);
-_internal void ZINK_RendererDestroy(ZINK_Renderer *renderer_handle);
-_internal void ZINK_ContextDestroy(ZINK_Context *context);
-_internal void ZINK_ManageInputEvent(ZINK_Context *context, SDL_Event event);
+_internal B32  ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag);
+_internal B32  ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context);
+_internal B32  ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 *toolbar_list, U32 toolbar_size);
+_internal void ZINK_DestroyRenderer(ZINK_Renderer *renderer_handle);
+_internal void ZINK_DestroyContext(ZINK_Context *context);
+_internal void ZINK_DestroyToolbar(ZINK_Toolbar *toolbar);
+_internal void ZINK_UpdateToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar);
+_internal void ZINK_Update(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt);
+_internal void ZINK_UpdateInputState(ZINK_InputState *input);
+_internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 delta);
 _internal F32  ZINK_LinearInterpolate(F32 point_a, F32 point_b, F32 factor);
 _internal F32  ZINK_Clamp(F32 value, F32 min, F32 max);
+
+#endif // ZINK_RENDERER_H
