@@ -1,0 +1,17 @@
+# Ignore compiled files
+*.o
+*.exe
+*.pbd
+*.ibd
+*.rdi
+
+# Ignore logs
+*.log
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore directories
+build/
+assets/
