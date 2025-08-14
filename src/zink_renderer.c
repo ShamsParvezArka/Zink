@@ -1,10 +1,6 @@
-#include <stdlib.h>
-#include <string.h>
-#include "../include/SDL3/sdl.h"
-#include "../include/SDL_image.h"
-#include "types.h"
 #include "zink_renderer.h"
 
+// TODO: remove these global variables
 _global B32 running;
 _global B32 dragging;
 
@@ -29,15 +25,15 @@ void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
   ZINK_Context context = {};
   ZINK_InitContext(&renderer_handle, &context);
 
-  ZINK_Toolbar toolbar = {};
-  String8 list[3] = {"..\\assets\\move.png",
-                     "..\\assets\\draw.png",
-                     "..\\assets\\eraser.png"};
-  if (!ZINK_InitToolbar(&renderer_handle, &toolbar, list, 3))
-  {
-    printf("ZINK_Error: failed to initialize toolbar\n");
-  }
-
+  // ZINK_Toolbar toolbar = {};
+  // String8 list[3] = {"..\\assets\\move.png",
+  //                    "..\\assets\\draw.png",
+  //                    "..\\assets\\eraser.png"};
+  // if (!ZINK_InitToolbar(&renderer_handle, &toolbar, list, 3))
+  // {
+  //   printf("ZINK_Error: failed to initialize toolbar\n");
+  // }
+  // 
   ZINK_InputState input = {};
   
   running = true;
@@ -49,9 +45,9 @@ void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
     
     ZINK_UpdateInputState(&input);
     ZINK_UpdateCamera(&context.camera, &input, delta);
-    ZINK_Update(&renderer_handle, &context, delta);
+    ZINK_UpdateAndRender(&renderer_handle, &context, delta);
   }
-
+  
 	ZINK_DestroyContext(&context);
   ZINK_DestroyRenderer(&renderer_handle);
   SDL_Quit();
@@ -175,7 +171,7 @@ _internal void ZINK_UpdateInputState(ZINK_InputState *input)
   }
 }
 
-_internal void ZINK_Update(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt)
+_internal void ZINK_UpdateAndRender(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt)
 {
   context->dest.x = context->camera.offset.x - context->camera.target.x * context->camera.zoom;
   context->dest.y = context->camera.offset.y - context->camera.target.y * context->camera.zoom;    
@@ -185,17 +181,21 @@ _internal void ZINK_Update(ZINK_Renderer *renderer_handle, ZINK_Context *context
   SDL_SetRenderDrawColor(renderer_handle->renderer, 29, 29, 29, 255);
   SDL_RenderClear(renderer_handle->renderer);
   SDL_RenderTexture(renderer_handle->renderer, context->texture, NULL, &context->dest);
-//  ZINK_ToolbarUpdate(renderer_handle, &toolbar);        
   SDL_RenderPresent(renderer_handle->renderer);
 }
 
 _internal void ZINK_DestroyToolbar(ZINK_Toolbar *toolbar)
 {
-  
+  for (U32 tool = 0; tool < toolbar->capacity; tool++)
+  {
+    SDL_DestroyTexture(toolbar->tools[tool].texture);
+  }
+  free(toolbar->tools);
 }
 
 // TODO: implement ZINK_ToolbarDestroy
-_internal B32 ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 *tools_list, U32 size)
+_internal B32
+ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 *tools_list, U32 size)
 {
   toolbar->tools = malloc(sizeof(ZINK_Button) * size);
   toolbar->capacity = size;
@@ -203,9 +203,9 @@ _internal B32 ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *too
   
   _local I32 prev_pos = 0;
   _local I32 prev_gap = 0;
-  for (I32 i = 0; i < size; i++)
+  for (U32 tool = 0; tool < size; tool++)
   {
-    String8 image_path = tools_list[i];
+    String8 image_path = tools_list[tool];
     SDL_Surface *surface = IMG_Load(image_path);
     if (!surface)
     {
@@ -213,22 +213,22 @@ _internal B32 ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *too
       return false;
     }
   
-    toolbar->tools[i].texture = SDL_CreateTextureFromSurface(renderer_handle->renderer, surface);
-    if (!toolbar->tools[i].texture)
+    toolbar->tools[tool].texture = SDL_CreateTextureFromSurface(renderer_handle->renderer, surface);
+    if (!toolbar->tools[tool].texture)
     {
       SDL_Log("SDL_Error: %s\n", SDL_GetError());
       return false;
     }
     SDL_DestroySurface(surface);
 
-    toolbar->tools[i].dest.x = 20;
-    toolbar->tools[i].dest.y = 20 + prev_pos + prev_gap;
-    toolbar->tools[i].dest.w = BUTTON_SIZE;
-    toolbar->tools[i].dest.h = BUTTON_SIZE;
-    prev_pos = toolbar->tools[i].dest.y;
+    toolbar->tools[tool].dest.x = 20;
+    toolbar->tools[tool].dest.y = 20 + prev_pos + prev_gap;
+    toolbar->tools[tool].dest.w = BUTTON_SIZE;
+    toolbar->tools[tool].dest.h = BUTTON_SIZE;
+    prev_pos = toolbar->tools[tool].dest.y;
     prev_gap = BUTTON_GAP;
 
-    toolbar->tools[i].active = false;
+    toolbar->tools[tool].active = false;
     toolbar->count += 1;
   }
 

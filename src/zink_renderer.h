@@ -1,6 +1,8 @@
 #ifndef ZINK_RENDERER_H
 #define ZINK_RENDERER_H
 
+#include "zink_includes.h"
+
 // renderer
 #define ZINC_VSYNC_ENABLE  1
 #define ZINC_VSYNC_DISABLE 0
@@ -89,7 +91,7 @@ _internal void ZINK_DestroyRenderer(ZINK_Renderer *renderer_handle);
 _internal void ZINK_DestroyContext(ZINK_Context *context);
 _internal void ZINK_DestroyToolbar(ZINK_Toolbar *toolbar);
 _internal void ZINK_UpdateToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar);
-_internal void ZINK_Update(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt);
+_internal void ZINK_UpdateAndRender(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 dt);
 _internal void ZINK_UpdateInputState(ZINK_InputState *input);
 _internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 delta);
 _internal F32  ZINK_LinearInterpolate(F32 point_a, F32 point_b, F32 factor);
