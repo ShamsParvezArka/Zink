@@ -13,5 +13,5 @@
 Thumbs.db
 
 # Ignore directories
-build/
+debug/
 assets/
