@@ -15,7 +15,7 @@ struct Win32_Context
   WNDCLASS window_class;
   HWND tray_handle;
   HMENU tray_menu;
-	NOTIFYICONDATA tray_data;  
+  NOTIFYICONDATA tray_data;  
   MSG message;    
 
   B32 running;

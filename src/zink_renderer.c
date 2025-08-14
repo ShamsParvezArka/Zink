@@ -48,7 +48,7 @@ void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
     ZINK_UpdateAndRender(&renderer_handle, &context, delta);
   }
   
-	ZINK_DestroyContext(&context);
+  ZINK_DestroyContext(&context);
   ZINK_DestroyRenderer(&renderer_handle);
   SDL_Quit();
 }
@@ -93,8 +93,8 @@ _internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32
 
 _internal void ZINK_UpdateInputState(ZINK_InputState *input)
 {
-	memset(input->mouse_down,     0, sizeof(input->mouse_down[0]) * 5);
-	memset(input->mouse_released, 0, sizeof(input->mouse_released[0]) * 5);
+  memset(input->mouse_down,     0, sizeof(input->mouse_down[0]) * 5);
+  memset(input->mouse_released, 0, sizeof(input->mouse_released[0]) * 5);
   memset(input->key_down,       0, sizeof(input->key_down[0]) * SDL_SCANCODE_COUNT);
   memset(input->key_released,   0, sizeof(input->key_released[0]) * SDL_SCANCODE_COUNT);
   input->wheel_delta = 0.0f;
@@ -138,7 +138,7 @@ _internal void ZINK_UpdateInputState(ZINK_InputState *input)
 
       case SDL_EVENT_MOUSE_WHEEL:
       {
-				input->wheel_delta = event.wheel.y;
+        input->wheel_delta = event.wheel.y;
       } break;
 
       case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -146,7 +146,7 @@ _internal void ZINK_UpdateInputState(ZINK_InputState *input)
         if (event.button.button == SDL_BUTTON_LEFT)
           input->mouse_drag = true;
         
-				input->mouse_down[event.button.button] = true;
+        input->mouse_down[event.button.button] = true;
         input->mouse_released[event.button.button] = false;
       } break;
 
@@ -238,7 +238,7 @@ ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 
 _internal void ZINK_UpdateToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar)
 {
   for (U32 i = 0; i < toolbar->capacity; i++)
-	  SDL_RenderTexture(renderer_handle->renderer, toolbar->tools[i].texture, NULL, &toolbar->tools[i].dest);
+    SDL_RenderTexture(renderer_handle->renderer, toolbar->tools[i].texture, NULL, &toolbar->tools[i].dest);
 }
 
 _internal B32 ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag)
@@ -282,7 +282,7 @@ _internal B32 ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 h
 
 _internal B32 ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context)
 {
-	String8 image_path = "..\\assets\\screenshot.bmp";
+  String8 image_path = "..\\assets\\screenshot.bmp";
 
   context->surface = IMG_Load(image_path);
   if (!context->surface)

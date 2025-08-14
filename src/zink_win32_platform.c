@@ -17,7 +17,7 @@ I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR comm
   context.window_class.hInstance = instance;
   context.window_class.lpszClassName = "ZINK_Class";
 
-	HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &Win32_GlobalHookCallback, 0, 0);
+  HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &Win32_GlobalHookCallback, 0, 0);
 
   if (RegisterClass(&context.window_class))
   {
@@ -77,7 +77,7 @@ I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR comm
 
 _internal void Win32TakeScreenshot(HDC screen, I32 width, I32 height)
 {
-	HDC context = CreateCompatibleDC(screen);
+  HDC context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
   SelectObject(context, bmp_handle);
 
@@ -126,7 +126,7 @@ _internal int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
                        lpbitmap,
                        (BITMAPINFO *)&bmp_info_header,
                        DIB_RGB_COLORS);
-	if (sig == 0)
+  if (sig == 0)
   {
     printf("ERROR: Failed to retrieve data from bitmap\n");
     return 0; 
@@ -165,7 +165,7 @@ _internal LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, U32 messa
   
   switch (message)
   {
-	  case WM_TRAYICON:
+    case WM_TRAYICON:
     {
       if (l_param == WM_RBUTTONUP)
       {

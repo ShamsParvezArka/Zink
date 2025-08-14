@@ -16,13 +16,13 @@ struct ZINK_Renderer
   SDL_Window *window;
   SDL_Renderer *renderer;
   
-	I32 window_width;
+  I32 window_width;
   I32 window_height;
 
-	B32 initialized;
+  B32 initialized;
   B32 vsync;
 
-	String8 window_title;
+  String8 window_title;
   String8 driver;  
 };
 
@@ -73,7 +73,7 @@ struct ZINK_InputState
   F32 mouse_y;
   F32 world_x;
   F32 world_y;
-	F32 wheel_delta;
+  F32 wheel_delta;
   
   B32 mouse_drag;
   B32 mouse_down[5];
