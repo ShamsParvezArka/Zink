@@ -1,2 +1,2 @@
-<img width="1024" height="505" alt="Image" src="https://github.com/user-attachments/assets/f62c6c87-bfcd-418b-9337-ba529e432edb" />
+<img width="1023" height="395" alt="Image" src="https://github.com/user-attachments/assets/3b4940a4-7d22-4a49-95e4-971b140ff0e9" />
 Native win32 utility software
