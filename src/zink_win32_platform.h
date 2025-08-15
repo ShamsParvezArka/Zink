@@ -4,7 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
-#include "zink_renderer.h"
+#include "zink_core.h"
 
 #define WM_TRAYICON (WM_USER + 1)
 #define ID_TRAY_EXIT 1001
@@ -17,7 +17,11 @@ struct Win32_Context
   HMENU tray_menu;
   NOTIFYICONDATA tray_data;  
   MSG message;    
+};
 
+typedef struct Win32_State Win32_State;
+struct Win32_State
+{
   B32 running;
   B32 zink_mode;
 };

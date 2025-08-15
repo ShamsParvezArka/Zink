@@ -1,12 +1,14 @@
 #include "zink_win32_platform.h"
 
+_global Win32_State state = {};
 _global Win32_Context context = {};
 
-I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
+I32 WINAPI
+Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
 {
 #if ZINK_DEBUG_MODE
   AllocConsole();
-  FILE* fp;
+  FILE *fp;
   freopen_s(&fp, "CONOUT$", "w", stdout);
   freopen_s(&fp, "CONOUT$", "w", stderr);
   freopen_s(&fp, "CONIN$",  "r", stdin);
@@ -45,20 +47,20 @@ I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR comm
     strcpy(context.tray_data.szTip, "ZINK_");
     Shell_NotifyIcon(NIM_ADD, &context.tray_data);    
 
-    context.running = true;
-    while (context.running)
+    state.running = true;
+    while (state.running)
     {
       while (PeekMessage(&context.message, 0, 0, 0, PM_REMOVE))
       {
         if (context.message.message == WM_QUIT)
         {
-          context.running = false;
+          state.running = false;
         }
         TranslateMessage(&context.message);
         DispatchMessage(&context.message);
       }
       
-      if (context.zink_mode)
+      if (state.zink_mode)
       {
         String8 title = "ZINK";
         HDC screen = GetDC(NULL);        
@@ -66,7 +68,7 @@ I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR comm
         I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);
         ZINK_TriggerMainLoop(width, height, title);
         
-        context.zink_mode = false;
+        state.zink_mode = false;
       }
     }
   }
@@ -75,7 +77,8 @@ I32 WINAPI Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR comm
   return 0;
 }
 
-_internal void Win32TakeScreenshot(HDC screen, I32 width, I32 height)
+_internal void
+Win32TakeScreenshot(HDC screen, I32 width, I32 height)
 {
   HDC context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
@@ -96,7 +99,8 @@ _internal void Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   DeleteDC(context);
 }
 
-_internal int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
+_internal int
+ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 {
   BITMAP bmp;
   GetObject(bitmap_handle, sizeof(BITMAP), &bmp);
@@ -159,7 +163,8 @@ _internal int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   return 1;
 }
 
-_internal LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM l_param)
+_internal LRESULT CALLBACK
+Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM l_param)
 {
   LRESULT result = 0;
   
@@ -205,7 +210,8 @@ _internal LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, U32 messa
   return result;
 }
 
-_internal LRESULT CALLBACK Win32_GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
+_internal LRESULT CALLBACK
+Win32_GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
 
@@ -215,13 +221,13 @@ _internal LRESULT CALLBACK Win32_GlobalHookCallback(I32 hook_code, WPARAM w_para
     {
       // TODO: find a better key combo -----------------------------------
       case 'D':
-        if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && !context.zink_mode)
+        if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && !state.zink_mode)
         {
           HDC screen = GetDC(NULL);
           I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
           I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);          
           Win32TakeScreenshot(screen, width, height);
-          context.zink_mode = true;
+          state.zink_mode = true;
         } break;
 
       default:
