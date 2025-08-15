@@ -4,8 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define _global static
-#define _local static
+#define _global   static
+#define _local    static
 #define _internal static
 
 typedef uint8_t  U8;
@@ -19,7 +19,7 @@ typedef int64_t  I64;
 typedef float    F32;
 typedef double   F64;
 
-typedef bool B32;
-typedef char * String8;
+typedef bool     B32;
+typedef char    *String8;
 
 #endif // ZINK_BASE_H
