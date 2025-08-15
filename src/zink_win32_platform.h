@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include "zink_win32_resource.h"
 #include "zink_core.h"
 
 #define WM_TRAYICON (WM_USER + 1)

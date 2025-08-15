@@ -1,0 +1,4 @@
+#include <windows.h>
+#include "zink_win32_resource.h"
+
+IDI_ZINK_ICON ICON "resource/logo.ico"

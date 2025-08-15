@@ -1,5 +1,4 @@
 #include "zink_win32_platform.h"
-#include <winuser.h>
 
 _global Win32_State state = {};
 _global Win32_Context context = {};
@@ -44,8 +43,8 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
     context.tray_data.uID = 1;
     context.tray_data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     context.tray_data.uCallbackMessage = WM_TRAYICON;
-    context.tray_data.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-    strcpy(context.tray_data.szTip, "ZINK_");
+    context.tray_data.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ZINK_ICON));
+    strcpy(context.tray_data.szTip, "ZINK");
     Shell_NotifyIcon(NIM_ADD, &context.tray_data);    
 
     state.running = true;

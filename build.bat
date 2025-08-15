@@ -27,11 +27,19 @@ set cl_link=    /link /libpath:".\lib"
 set cl_lib=     User32.lib Shell32.lib Gdi32.lib SDL3.lib SDL3_Image.lib 
 set cl_exclude=
 
-:: --- Source & Output ----------------------------------------------------
-set cl_source=  src\zink_main.c 
+:: --- RC Config ---------------------------------------------------------
+set rc_general= /nologo
+set rc_source=  src\zink_icon.rc
+set rc_output=  resource\logo.res
+
+:: --- RC Compile --------------------------------------------------------
+call rc %rc_general% /fo %rc_output% %rc_source%
+
+:: --- CL Source & Output -------------------------------------------------
+set cl_source=  src\zink_main.c %rc_output%
 set cl_output=  /Fe:debug\zink.exe
 
-:: --- Compile ------------------------------------------------------------
+:: --- CL Compile ---------------------------------------------------------
 if "%debug%"=="1"   call cl /DZINK_DEBUG_MODE %cl_output% %cl_source% %cl_general% %cl_debug% %cl_include% %cl_link% %cl_lib% %cl_exclude%
 if "%release%"=="1" call cl %cl_output% %cl_source% %cl_general% %cl_debug% %cl_include% %cl_link% %cl_lib% %cl_exclude%
 
