@@ -83,7 +83,7 @@ struct ZINK_InputState
   B32 key_released[SDL_SCANCODE_COUNT];
 };
 
-void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title);
+void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 path);
 
 _internal B32  ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag);
 _internal B32  ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context);

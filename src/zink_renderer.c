@@ -11,24 +11,22 @@ _global F32 drag_start_mouse_y;
 _global F32 drag_start_target_x;
 _global F32 drag_start_target_y;
 
+_global String8 temp_path;
+
+// TODO: move this filepath to somewhere else. 
 void
-ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
+ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 path)
 {
   ZINK_Renderer renderer_handle = {};
   String8 driver = "direct3d11";
   ZINK_InitRenderer(&renderer_handle, width, height, title, driver, true);
 
+  // NOTE: This is temporary. Here MAX_PATH = 260
+  temp_path = malloc(260);
+  temp_path = path;
+
   ZINK_Context context = {};
   ZINK_InitContext(&renderer_handle, &context);
-
-  // ZINK_Toolbar toolbar = {};
-  // String8 list[3] = {"..\\assets\\move.png",
-  //                    "..\\assets\\draw.png",
-  //                    "..\\assets\\eraser.png"};
-  // if (!ZINK_InitToolbar(&renderer_handle, &toolbar, list, 3))
-  // {
-  //   printf("ZINK_Error: failed to initialize toolbar\n");
-  // }
 
   ZINK_InputState input = {};
   
@@ -41,7 +39,7 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title)
     ZINK_UpdateCamera(&context.camera, &input, delta_time);
     ZINK_UpdateAndRender(&renderer_handle, &context, delta_time);
   }
-  
+
   ZINK_DestroyContext(&context);
   ZINK_DestroyRenderer(&renderer_handle);
   SDL_Quit();
@@ -77,7 +75,9 @@ ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8
     return false;
   }
   
-  I32 window_flags = SDL_WINDOW_MOUSE_FOCUS | SDL_WINDOW_BORDERLESS;
+  I32 window_flags = SDL_WINDOW_INPUT_FOCUS |
+                     SDL_WINDOW_MOUSE_FOCUS |
+                     SDL_WINDOW_BORDERLESS;
   renderer_handle->window = SDL_CreateWindow(renderer_handle->window_title,
                                              renderer_handle->window_width,
                                              renderer_handle->window_height,
@@ -104,7 +104,7 @@ ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8
 _internal B32
 ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context)
 {
-  String8 image_path = "..\\assets\\screenshot.bmp";
+  String8 image_path = temp_path;
 
   context->surface = IMG_Load(image_path);
   if (!context->surface)

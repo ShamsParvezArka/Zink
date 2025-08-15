@@ -66,9 +66,16 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
         HDC screen = GetDC(NULL);        
         I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
         I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);
-        ZINK_TriggerMainLoop(width, height, title);
-        
+
+        // NOTE: temp_file_path is temporary. It will be move to somewhere
+        // else soon
+        String8 temp_file_path = malloc(MAX_PATH);
+        GetTempPath(MAX_PATH, temp_file_path);
+        strcat(temp_file_path, "zink_screenshot.bmp");
+
+        ZINK_TriggerMainLoop(width, height, title, temp_file_path);
         state.zink_mode = false;
+        free(temp_file_path);
       }
     }
   }
@@ -87,8 +94,13 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   BOOL sig = BitBlt(context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
   if (sig != 0)
   {
-    LPCSTR filename = "..\\assets\\screenshot.bmp";
-    ExportBitmap(bmp_handle, context, filename);        
+    String8 temp_file_path = malloc(MAX_PATH);
+    GetTempPath(MAX_PATH, temp_file_path);
+    strcat(temp_file_path, "zink_screenshot.bmp");
+
+    // TODO: Bullet proof this
+    Win32ExportBitmap(bmp_handle, context, temp_file_path);
+    free(temp_file_path);
   }
   else
   {
@@ -100,7 +112,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
 }
 
 _internal int
-ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
+Win32ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 {
   BITMAP bmp;
   GetObject(bitmap_handle, sizeof(BITMAP), &bmp);

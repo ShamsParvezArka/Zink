@@ -4,6 +4,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
+#include <fileapi.h>
 #include "zink_win32_resource.h"
 #include "zink_core.h"
 
