@@ -1,4 +1,5 @@
 #include "zink_win32_platform.h"
+#include <winuser.h>
 
 _global Win32_State state = {};
 _global Win32_Context context = {};
@@ -219,16 +220,21 @@ Win32_GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
   {
     switch (key->vkCode)
     {
-      // TODO: find a better key combo -----------------------------------
-      case 'D':
-        if (GetAsyncKeyState(VK_CONTROL) & 0x8000 && !state.zink_mode)
+      case (VK_SPACE):
+      {
+        I32 ctrl = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) ||
+                   (GetAsyncKeyState(VK_RCONTROL) & 0x8000);
+        I32 win  = (GetAsyncKeyState(VK_LWIN) & 0x8000) ||
+                   (GetAsyncKeyState(VK_RWIN) & 0x8000);
+        if (ctrl && win && !state.zink_mode)
         {
           HDC screen = GetDC(NULL);
           I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
           I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);          
           Win32TakeScreenshot(screen, width, height);
-          state.zink_mode = true;
-        } break;
+          state.zink_mode = true;      
+        }
+      } break;
 
       default:
       {
