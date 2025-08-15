@@ -4,6 +4,7 @@
 *.pbd
 *.ibd
 *.rdi
+*.res
 
 # Ignore logs
 *.log
