@@ -14,7 +14,7 @@ You can download pre-built binaries for Zink
 
 # Development Setup Instructions
 
-**Note: Currently, only x64 Windows development is supported.**
+> Note: Currently, only x64 Windows development is supported.
 ### 1. Install the required tools
 - MSVC
 - Window SDK
