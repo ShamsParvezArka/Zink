@@ -1,5 +1,7 @@
 @echo off
-call "%SystemDrive%\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
+:: NOTE: This line is only my local machine. This will automatically
+::       initialize msvc env. For emacs setup only
+:: call "%SystemDrive%\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
 
 :: --- Build Type ---------------------------------------------------------
 set debug=0
