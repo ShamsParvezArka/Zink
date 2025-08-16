@@ -87,7 +87,11 @@ ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8
     SDL_Log("SDL_Error: %s\n", SDL_GetError());
     return false;
   }
-  
+  SDL_ShowCursor();
+  if (!SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT))) return false;
+  if (!SDL_SetWindowFocusable(renderer_handle->window, true)) return false;  
+  if (!SDL_RaiseWindow(renderer_handle->window)) return false;
+
   renderer_handle->renderer = SDL_CreateRenderer(renderer_handle->window, renderer_handle->driver);
   if (!renderer_handle->renderer)
   {
