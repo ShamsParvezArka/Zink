@@ -42,6 +42,7 @@ You can find the executable in the `build` directory.
 | Control                                             | Description            |
 |-----------------------------------------------------|------------------------|
 | <kbd>Ctrl</kbd> + <kbd>Win</kbd> + <kbd>Space</kbd> | Trigger Zink           |
+| <kbd>Esc</kbd>                                      | Exit Zink              |
 | <kbd>Scroll</kbd> or <kbd>Pinch</kbd>               | Zoom in/out.           |
 | Drag with <kbd>left mouse</kbd> button              | Move the image around. |
 
