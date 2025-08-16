@@ -1,5 +1,7 @@
 # The Zink Project
 
+> Watch this [video demo](https://youtu.be/10KHCzyjaIk?si=jCqsO029LgUpOTMk)
+
 Zink is a native, user-mode application. It's main focus is to zoom in/out 
 screen using mouse wheel. It currently only supports Windows(x64) operating 
 system. In the future it may expand to also support native Linux system.
