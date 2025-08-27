@@ -9,7 +9,7 @@ ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 
   
   _local I32 prev_pos = 0;
   _local I32 prev_gap = 0;
-  for (U32 tool = 0; tool < size; tool++)
+  for EachIndex(tool, size)
   {
     String8 image_path = tools_list[tool];
     SDL_Surface *surface = IMG_Load(image_path);
@@ -44,14 +44,14 @@ ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 
 _internal void
 ZINK_UpdateToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar)
 {
-  for (U32 i = 0; i < toolbar->capacity; i++)
-    SDL_RenderTexture(renderer_handle->renderer, toolbar->tools[i].texture, NULL, &toolbar->tools[i].dest);
+  for EachIndex(idx, toolbar->capacity)  
+    SDL_RenderTexture(renderer_handle->renderer, toolbar->tools[idx].texture, NULL, &toolbar->tools[idx].dest);
 }
 
 _internal void
 ZINK_DestroyToolbar(ZINK_Toolbar *toolbar)
 {
-  for (U32 tool = 0; tool < toolbar->capacity; tool++)
+  for EachIndex(tool, toolbar->capacity)
   {
     SDL_DestroyTexture(toolbar->tools[tool].texture);
   }
