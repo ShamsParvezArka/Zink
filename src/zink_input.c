@@ -23,27 +23,18 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       {
         SDL_Keycode key = event.key.key;
         if (key == SDLK_ESCAPE) running = false;
-        
-        if (key == SDLK_W) input->key_down[SDLK_W] = true;
-        if (key == SDLK_D) input->key_down[SDLK_D] = true;
-        if (key == SDLK_E) input->key_down[SDLK_E] = true;
 
-        if (key == SDLK_W) input->key_released[SDLK_W] = false;
-        if (key == SDLK_D) input->key_released[SDLK_D] = false;
-        if (key == SDLK_E) input->key_released[SDLK_E] = false;
+        if (key == SDLK_W) KeyRegister(input->key_down, input->key_released, SDLK_W);
+        if (key == SDLK_D) KeyRegister(input->key_down, input->key_released, SDLK_D);
+        if (key == SDLK_E) KeyRegister(input->key_down, input->key_released, SDLK_E);
       } break;
 
       case SDL_EVENT_KEY_UP:
       {
-        SDL_Keycode key = event.key.key;        
-        if (key == SDLK_W) input->key_released[SDLK_W] = true;
-        if (key == SDLK_D) input->key_released[SDLK_D] = true;
-        if (key == SDLK_E) input->key_released[SDLK_E] = true;
-
-        if (key == SDLK_W) input->key_down[SDLK_W] = true;
-        if (key == SDLK_D) input->key_down[SDLK_D] = true;
-        if (key == SDLK_E) input->key_down[SDLK_E] = true;
-        
+        SDL_Keycode key = event.key.key;
+        if (key == SDLK_W) KeyUnregister(input->key_down, input->key_released, SDLK_W);
+        if (key == SDLK_D) KeyUnregister(input->key_down, input->key_released, SDLK_D);
+        if (key == SDLK_E) KeyUnregister(input->key_down, input->key_released, SDLK_E);
       } break;      
 
       case SDL_EVENT_MOUSE_WHEEL:
@@ -54,18 +45,19 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       case SDL_EVENT_MOUSE_BUTTON_DOWN:
       {
         if (event.button.button == SDL_BUTTON_LEFT)
+        {
           input->mouse_drag = true;
-        
-        input->mouse_down[event.button.button] = true;
-        input->mouse_released[event.button.button] = false;
+          KeyRegister(input->mouse_down, input->mouse_released, event.button.button);
+        }
       } break;
 
       case SDL_EVENT_MOUSE_BUTTON_UP:
       {
         if (event.button.button == SDL_BUTTON_LEFT)
+        {
           input->mouse_drag = false;
-        input->mouse_released[event.button.button] = true;
-        input->mouse_down[event.button.button] = false;        
+          KeyUnregister(input->mouse_down, input->mouse_released, event.button.button);
+        }
       } break;
 
       case SDL_EVENT_MOUSE_MOTION:

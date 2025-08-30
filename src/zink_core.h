@@ -3,12 +3,26 @@
 
 #include "zink_includes.h"
 
-// renderer
+// renderer --------------------------------------------------------------
 #define ZINC_VSYNC_ENABLE  1
 #define ZINC_VSYNC_DISABLE 0
-// ui
+// ui --------------------------------------------------------------------
 #define BUTTON_SIZE 30
 #define BUTTON_GAP 10
+
+// input -----------------------------------------------------------------
+#define KeyRegister(down, released, key)        \
+  do                                            \
+  {                                             \
+    down[key]     = true;                       \
+    released[key] = false;                      \
+  } while (0);
+#define KeyUnregister(down, released, key)      \
+  do                                            \
+  {                                             \
+    down[key]     = false;                      \
+    released[key] = true;                       \
+  } while (0);  
 
 typedef struct ZINK_Renderer ZINK_Renderer;
 struct ZINK_Renderer
