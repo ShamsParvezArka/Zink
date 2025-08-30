@@ -1,7 +1,7 @@
 #include "zink_core.h"
 
 _internal void
-ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 delta_time)
+ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 texture_width, F32 texture_height, F32 delta_time)
 {
   input->world_x = (input->mouse_x - cam->offset.x) / cam->zoom + cam->target.x;
   input->world_y = (input->mouse_y - cam->offset.y) / cam->zoom + cam->target.y;
@@ -36,5 +36,21 @@ ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 delta_time)
     cam->target.y = drag_start_target_y - dy;    
   }
 
+  if (input->key_down[SDLK_R])
+  {
+    ZINK_ResetCamera(cam, texture_width, texture_height);
+  }  
+
   cam->zoom = ZINK_LinearInterpolate(cam->zoom, cam->zoom_target, 8.0f * delta_time);  
+}
+
+_internal void
+ZINK_ResetCamera(ZINK_Camera2D *cam, F32 texture_width, F32 texture_height)
+{
+  cam->offset.x    = texture_width * 0.5f;
+  cam->offset.y    = texture_height * 0.5f;    
+  cam->target.x    = texture_width * 0.5f;
+  cam->target.y    = texture_height * 0.5f;
+  cam->zoom        = 1.0f;
+  cam->zoom_target = 1.0f;  
 }

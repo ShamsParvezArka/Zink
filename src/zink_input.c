@@ -27,6 +27,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
         if (key == SDLK_W) KeyRegister(input->key_down, input->key_released, SDLK_W);
         if (key == SDLK_D) KeyRegister(input->key_down, input->key_released, SDLK_D);
         if (key == SDLK_E) KeyRegister(input->key_down, input->key_released, SDLK_E);
+        if (key == SDLK_R) KeyRegister(input->key_down, input->key_released, SDLK_R);
       } break;
 
       case SDL_EVENT_KEY_UP:
@@ -35,6 +36,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
         if (key == SDLK_W) KeyUnregister(input->key_down, input->key_released, SDLK_W);
         if (key == SDLK_D) KeyUnregister(input->key_down, input->key_released, SDLK_D);
         if (key == SDLK_E) KeyUnregister(input->key_down, input->key_released, SDLK_E);
+        if (key == SDLK_R) KeyUnregister(input->key_down, input->key_released, SDLK_R);        
       } break;      
 
       case SDL_EVENT_MOUSE_WHEEL:
