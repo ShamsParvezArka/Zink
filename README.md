@@ -50,6 +50,6 @@ You can find the executable in the `build` directory.
 | <kbd>R</kbd>                                        | Reset view             |
 
 # Limitations
-`Zink` may not appear at the top(foreground activation) the first time when
-it's triggered due to Windows **focus-stealing prevention**. This is normal 
+Zink may not appear at the top(foreground activation) the first time when
+it's triggered due to Windows `Focus Stealing Prevention`. This is normal 
 Windows behavior.
