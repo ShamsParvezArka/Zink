@@ -50,7 +50,7 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
     state.running = true;
     while (state.running)
     {
-      while (PeekMessage(&context.message, 0, 0, 0, PM_REMOVE))
+      if (PeekMessage(&context.message, 0, 0, 0, PM_REMOVE))
       {
         if (context.message.message == WM_QUIT)
         {
@@ -58,6 +58,10 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
         }
         TranslateMessage(&context.message);
         DispatchMessage(&context.message);
+      }
+      else
+      {
+        WaitMessage();
       }
       
       if (state.zink_mode)
