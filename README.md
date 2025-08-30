@@ -45,6 +45,11 @@ You can find the executable in the `build` directory.
 |-----------------------------------------------------|------------------------|
 | <kbd>Ctrl</kbd> + <kbd>Win</kbd> + <kbd>Space</kbd> | Trigger Zink           |
 | <kbd>Esc</kbd>                                      | Exit Zink              |
-| <kbd>Scroll</kbd> or <kbd>Pinch</kbd>               | Zoom in/out.           |
-| Drag with <kbd>left mouse</kbd> button              | Move the image around. |
+| <kbd>Scroll</kbd> or <kbd>Pinch</kbd>               | Zoom in/out            |
+| Drag with <kbd>left mouse</kbd> button              | Move the image around  |
+| <kbd>R</kbd>                                        | Reset view             |
 
+# Limitations
+`Zink` may not appear at the top(foreground activation) the first time when
+it's triggered due to Windows **focus-stealing prevention**. This is normal 
+Windows behavior.
