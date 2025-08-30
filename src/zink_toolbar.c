@@ -1,7 +1,7 @@
 #include "zink_core.h"
 
 _internal B32
-ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 *tools_list, U32 size)
+ZINK_InitToolbar(ZINK_Renderer *renderer, ZINK_Toolbar *toolbar, String8 *tools_list, U32 size)
 {
   toolbar->tools = malloc(sizeof(ZINK_Button) * size);
   toolbar->capacity = size;
@@ -19,7 +19,7 @@ ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 
       return false;
     }
   
-    toolbar->tools[tool].texture = SDL_CreateTextureFromSurface(renderer_handle->renderer, surface);
+    toolbar->tools[tool].texture = SDL_CreateTextureFromSurface(renderer->renderer, surface);
     if (!toolbar->tools[tool].texture)
     {
       SDL_Log("SDL_Error: %s\n", SDL_GetError());
@@ -42,10 +42,10 @@ ZINK_InitToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar, String8 
 }
 
 _internal void
-ZINK_UpdateToolbar(ZINK_Renderer *renderer_handle, ZINK_Toolbar *toolbar)
+ZINK_UpdateToolbar(ZINK_Renderer *renderer, ZINK_Toolbar *toolbar)
 {
   for EachIndex(idx, toolbar->capacity)  
-    SDL_RenderTexture(renderer_handle->renderer, toolbar->tools[idx].texture, NULL, &toolbar->tools[idx].dest);
+    SDL_RenderTexture(renderer->renderer, toolbar->tools[idx].texture, NULL, &toolbar->tools[idx].dest);
 }
 
 _internal void

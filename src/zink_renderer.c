@@ -17,16 +17,16 @@ _global String8 temp_path;
 void
 ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 path)
 {
-  ZINK_Renderer renderer_handle = {};
+  ZINK_Renderer renderer = {};
   String8 driver = "direct3d11";
-  ZINK_InitRenderer(&renderer_handle, width, height, title, driver, true);
+  ZINK_InitRenderer(&renderer, width, height, title, driver, true);
 
   // NOTE: This is temporary. Here MAX_PATH = 260
   temp_path = malloc(260);
   temp_path = path;
 
   ZINK_Context context = {};
-  ZINK_InitContext(&renderer_handle, &context);
+  ZINK_InitContext(&renderer, &context);
 
   ZINK_InputState input = {};
   
@@ -36,38 +36,41 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 path)
     F32 delta_time = ZINK_GetDeltaTime();
     
     ZINK_UpdateInputState(&input);
-    ZINK_UpdateCamera(&context.camera, &input, delta_time);
-    ZINK_UpdateAndRender(&renderer_handle, &context, delta_time);
+    ZINK_UpdateCamera(&context.camera,
+                      &input,
+                      context.texture_width, context.texture_width,
+                      delta_time);
+    ZINK_UpdateAndRender(&renderer, &context, delta_time);
   }
 
   ZINK_DestroyContext(&context);
-  ZINK_DestroyRenderer(&renderer_handle);
+  ZINK_DestroyRenderer(&renderer);
   SDL_Quit();
 }
 
 _internal void
-ZINK_UpdateAndRender(ZINK_Renderer *renderer_handle, ZINK_Context *context, F32 delta_time)
+ZINK_UpdateAndRender(ZINK_Renderer *renderer, ZINK_Context *context, F32 delta_time)
 {
   context->dest.x = context->camera.offset.x - context->camera.target.x * context->camera.zoom;
   context->dest.y = context->camera.offset.y - context->camera.target.y * context->camera.zoom;    
   context->dest.w = context->texture_width * context->camera.zoom;
   context->dest.h = context->texture_height * context->camera.zoom;
   
-  SDL_SetRenderDrawColor(renderer_handle->renderer, 29, 29, 29, 255);
-  SDL_RenderClear(renderer_handle->renderer);
-  SDL_RenderTexture(renderer_handle->renderer, context->texture, NULL, &context->dest);
-  SDL_RenderPresent(renderer_handle->renderer);
+  SDL_SetRenderDrawColor(renderer->renderer, 29, 29, 29, 255);
+  SDL_RenderClear(renderer->renderer);
+  SDL_RenderTexture(renderer->renderer, context->texture, NULL, &context->dest);
+  SDL_RenderPresent(renderer->renderer);
 }
 
 _internal B32
-ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag)
+ZINK_InitRenderer(ZINK_Renderer *renderer, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag)
 {
-  renderer_handle->window_width = width;
-  renderer_handle->window_height = height;
-  renderer_handle->window_title = title;
-  renderer_handle->driver = driver;
-  renderer_handle->vsync = vsync_flag;
-  renderer_handle->initialized = true;
+  renderer->window_width = width;
+  renderer->window_height = height;
+  renderer->window_title = title;
+  renderer->driver = driver;
+  renderer->vsync = vsync_flag;
+  renderer->initialized = true;
   
   if (!SDL_Init(SDL_INIT_VIDEO))
   {
@@ -78,35 +81,36 @@ ZINK_InitRenderer(ZINK_Renderer *renderer_handle, I32 width, I32 height, String8
   I32 window_flags = SDL_WINDOW_INPUT_FOCUS |
                      SDL_WINDOW_MOUSE_FOCUS |
                      SDL_WINDOW_BORDERLESS;
-  renderer_handle->window = SDL_CreateWindow(renderer_handle->window_title,
-                                             renderer_handle->window_width,
-                                             renderer_handle->window_height,
+  renderer->window = SDL_CreateWindow(renderer->window_title,
+                                             renderer->window_width,
+                                             renderer->window_height,
                                              window_flags);
-  if (!renderer_handle->window)
+  if (!renderer->window)
   {
     SDL_Log("SDL_Error: %s\n", SDL_GetError());
     return false;
   }
+
   SDL_ShowCursor();
   if (!SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT))) return false;
-  if (!SDL_SetWindowFocusable(renderer_handle->window, true)) return false;  
-  if (!SDL_RaiseWindow(renderer_handle->window)) return false;
+  if (!SDL_SetWindowFocusable(renderer->window, true)) return false;  
+  if (!SDL_RaiseWindow(renderer->window)) return false;
 
-  renderer_handle->renderer = SDL_CreateRenderer(renderer_handle->window, renderer_handle->driver);
-  if (!renderer_handle->renderer)
+  renderer->renderer = SDL_CreateRenderer(renderer->window, renderer->driver);
+  if (!renderer->renderer)
   {
     SDL_Log("SDL_Error: %s\n", SDL_GetError());
     return false;
   }
   
-  if (vsync_flag) SDL_SetRenderVSync(renderer_handle->renderer, ZINC_VSYNC_ENABLE);
-  else            SDL_SetRenderVSync(renderer_handle->renderer, ZINC_VSYNC_DISABLE);
+  if (vsync_flag) SDL_SetRenderVSync(renderer->renderer, ZINC_VSYNC_ENABLE);
+  else            SDL_SetRenderVSync(renderer->renderer, ZINC_VSYNC_DISABLE);
   
   return true;
 }
 
 _internal B32
-ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context)
+ZINK_InitContext(ZINK_Renderer *renderer, ZINK_Context *context)
 {
   String8 image_path = temp_path;
 
@@ -117,7 +121,7 @@ ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context)
     return false;
   }
   
-  context->texture = SDL_CreateTextureFromSurface(renderer_handle->renderer,
+  context->texture = SDL_CreateTextureFromSurface(renderer->renderer,
                                                   context->surface);
   if (!context->texture)
   {
@@ -129,11 +133,11 @@ ZINK_InitContext(ZINK_Renderer *renderer_handle, ZINK_Context *context)
                      &context->texture_width,
                      &context->texture_height);
   
-  context->dest.w = renderer_handle->window_width;
-  context->dest.h = renderer_handle->window_height;
+  context->dest.w = renderer->window_width;
+  context->dest.h = renderer->window_height;
 
-  context->camera.offset.x = renderer_handle->window_width * 0.5f;
-  context->camera.offset.y = renderer_handle->window_height * 0.5f;
+  context->camera.offset.x = renderer->window_width * 0.5f;
+  context->camera.offset.y = renderer->window_height * 0.5f;
   context->camera.target.x = context->texture_width * 0.5f;
   context->camera.target.y = context->texture_height * 0.5f;
   context->camera.rotation = 0.0f;
@@ -153,11 +157,11 @@ ZINK_DestroyContext(ZINK_Context *context)
 }
 
 _internal void
-ZINK_DestroyRenderer(ZINK_Renderer *renderer_handle)
+ZINK_DestroyRenderer(ZINK_Renderer *renderer)
 {
-  if (renderer_handle->initialized)
+  if (renderer->initialized)
   {
-    SDL_DestroyRenderer(renderer_handle->renderer);
-    SDL_DestroyWindow(renderer_handle->window);    
+    SDL_DestroyRenderer(renderer->renderer);
+    SDL_DestroyWindow(renderer->window);    
   }
 }
