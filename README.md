@@ -11,7 +11,7 @@ Zink project aims to reduce the friction between user and their visual
 workspace, providing a seamless and intuitive way to magnify on-screen content 
 without breaking workflow or performance.
 
-You can download pre-built binaries for Zink 
+**You can download pre-built binaries for Zink** 
 [here](https://github.com/ShamsParvezArka/Zink/releases/)
 
 # Development Setup Instructions
