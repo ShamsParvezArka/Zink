@@ -8,8 +8,11 @@
 #define _local    static
 #define _internal static
 
-#define EachIndex(idx, count) (U64 idx = 0; idx < count; idx += 1)
-#define EachRange(idx, range) (U64 idx = range.min; idx < range.max; idx += 1)
+#define DeferScope(begin, end)       for (U32 _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
+#define DeferScopeChecked(begin, end) for (int _i_ = 2 * !(begin); (_i_ == 2 ? ((end), 0) : !_i_); _i_ += 1, (end))
+
+#define EachIndex(idx, count)   (U64 idx = 0; idx < count; idx += 1)
+#define EachRange(idx, range)   (U64 idx = range.min; idx < range.max; idx += 1)
 #define EachElement(idx, array) (U64 idx = 0; idx < ArrayCount(array); idx += 1)
 
 typedef uint8_t  U8;
