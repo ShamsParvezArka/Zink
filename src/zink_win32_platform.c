@@ -73,13 +73,15 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
 
         // NOTE: temp_file_path is temporary. It will be move to somewhere
         // else soon
-        String8 temp_file_path = malloc(MAX_PATH);
-        GetTempPath(MAX_PATH, temp_file_path);
-        strcat(temp_file_path, "zink_screenshot.bmp");
+        String8 temp_file_path = {};
+        DeferScope(temp_file_path = malloc(MAX_PATH), free(temp_file_path))
+        {
+          GetTempPath(MAX_PATH, temp_file_path);
+          strcat(temp_file_path, "zink_screenshot.bmp");
 
-        ZINK_TriggerMainLoop(width, height, title, temp_file_path);
-        state.zink_mode = false;
-        free(temp_file_path);
+          ZINK_TriggerMainLoop(width, height, title, temp_file_path);
+          state.zink_mode = false;
+        }
       }
     }
   }
@@ -98,13 +100,15 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   BOOL sig = BitBlt(context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
   if (sig != 0)
   {
-    String8 temp_file_path = malloc(MAX_PATH);
-    GetTempPath(MAX_PATH, temp_file_path);
-    strcat(temp_file_path, "zink_screenshot.bmp");
+    String8 temp_file_path = {};
+    DeferScope(temp_file_path = malloc(MAX_PATH), free(temp_file_path))
+    {
+      GetTempPath(MAX_PATH, temp_file_path);
+      strcat(temp_file_path, "zink_screenshot.bmp");
 
-    // TODO: Bullet proof this
-    Win32ExportBitmap(bmp_handle, context, temp_file_path);
-    free(temp_file_path);
+      // TODO: Bullet proof this ---------------------------------------------
+      Win32ExportBitmap(bmp_handle, context, temp_file_path);      
+    }
   }
   else
   {
@@ -166,7 +170,7 @@ Win32ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   bmp_file_header.bfSize = dbi_size;
   bmp_file_header.bfType = 0x4D42;
 
-  // TODO: implement proper error handling -------------------------------
+  // TODO: implement proper error handling -----------------------------------
   DWORD bytes_written;
   WriteFile(file_handle, &bmp_file_header, sizeof(BITMAPFILEHEADER), &bytes_written, NULL);
   WriteFile(file_handle, &bmp_info_header, sizeof(BITMAPINFOHEADER), &bytes_written, NULL);

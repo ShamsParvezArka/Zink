@@ -22,7 +22,6 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 path)
   ZINK_InitRenderer(&renderer, width, height, title, driver, true);
 
   // NOTE: This is temporary. Here MAX_PATH = 260
-  temp_path = malloc(260);
   temp_path = path;
 
   ZINK_Context context = {};
