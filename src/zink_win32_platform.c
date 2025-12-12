@@ -1,17 +1,11 @@
-#include "zink_win32_platform.h"
-
 _global Win32_State state = {};
 _global Win32_Context context = {};
 
 I32 WINAPI
-Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
+Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
 {
 #if ZINK_DEBUG_MODE
-  AllocConsole();
-  FILE *fp;
-  freopen_s(&fp, "CONOUT$", "w", stdout);
-  freopen_s(&fp, "CONOUT$", "w", stderr);
-  freopen_s(&fp, "CONIN$",  "r", stdin);
+  Win32SpawnConsole();
 #endif
   
   context.window_class.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
@@ -19,25 +13,24 @@ Win32Main(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, i
   context.window_class.hInstance = instance;
   context.window_class.lpszClassName = "ZINK_Class";
 
-  HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &Win32_GlobalHookCallback, 0, 0);
+  HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &Win32GlobalHookCallback, 0, 0);
 
   if (RegisterClass(&context.window_class))
   {
     HWND tray_handle = CreateWindowExA(0,
-                                   "ZINK_Class",
-                                   NULL,
-                                   WS_OVERLAPPEDWINDOW,
-                                   CW_USEDEFAULT,
-                                   CW_USEDEFAULT,
-                                   CW_USEDEFAULT,
-                                   CW_USEDEFAULT,
-                                   HWND_MESSAGE,
-                                   NULL,
-                                   instance,
-                                   NULL);
+                                       "ZINK_Class",
+                                       NULL,
+                                       WS_OVERLAPPEDWINDOW,
+                                       CW_USEDEFAULT,
+                                       CW_USEDEFAULT,
+                                       CW_USEDEFAULT,
+                                       CW_USEDEFAULT,
+                                       HWND_MESSAGE,
+                                       NULL,
+                                       instance,
+                                       NULL);
     context.tray_menu = CreatePopupMenu();
     AppendMenuA(context.tray_menu, MF_STRING, ID_TRAY_EXIT, "Exit");
-
     context.tray_data.cbSize = sizeof(context.tray_data);
     context.tray_data.hWnd = tray_handle;
     context.tray_data.uID = 1;
@@ -119,6 +112,16 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   DeleteDC(context);
 }
 
+_internal
+void Win32SpawnConsole()
+{
+  AllocConsole();
+  FILE *fp;
+  freopen_s(&fp, "CONOUT$", "w", stdout);
+  freopen_s(&fp, "CONOUT$", "w", stderr);
+  freopen_s(&fp, "CONIN$",  "r", stdin);
+}
+
 _internal int
 Win32ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
 {
@@ -187,7 +190,6 @@ _internal LRESULT CALLBACK
 Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM l_param)
 {
   LRESULT result = 0;
-  
   switch (message)
   {
     case WM_TRAYICON:
@@ -231,7 +233,7 @@ Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM 
 }
 
 _internal LRESULT CALLBACK
-Win32_GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
+Win32GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
 

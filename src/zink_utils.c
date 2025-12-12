@@ -1,5 +1,3 @@
-#include "zink_core.h"
-
 _internal F32
 ZINK_LinearInterpolate(F32 point_a, F32 point_b, F32 factor)
 {

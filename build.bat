@@ -1,11 +1,11 @@
 @echo off
 :: NOTE: This line is only my local machine. This will automatically
 ::       initialize msvc env. For emacs setup only
-:: call "%SystemDrive%\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
+call "%SystemDrive%\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
 
 :: --- Build Type ---------------------------------------------------------
-set debug=0
-set release=1
+set debug=1
+set release=0
 set msvc=1
 set clang=0
 
@@ -20,13 +20,13 @@ if "%msvc%"=="1"    set clang=0 && echo [msvc compile]
 
 :: --- Flags --------------------------------------------------------------
 :: /F4194304 --> add this to the cl_general to restrict MAX_STACK allocation 
-set cl_general= /nologo /ZI /FC
+set cl_general= /nologo /ZI /FC /std:c11
 set cl_debug=   /Fd:debug\ /Fo:debug\\
 
 :: --- Include & Libs -----------------------------------------------------
 set cl_include= /I".\include"
 set cl_link=    /link /libpath:".\lib"
-set cl_lib=     User32.lib Shell32.lib Gdi32.lib SDL3.lib SDL3_Image.lib 
+set cl_lib=     User32.lib Shell32.lib Gdi32.lib SDL3.lib SDL3_Image.lib  SDL3_ttf.lib
 set cl_exclude=
 
 :: --- RC Config ---------------------------------------------------------
