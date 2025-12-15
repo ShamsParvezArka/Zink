@@ -24,3 +24,34 @@ ZINK_GetDeltaTime()
   
   return delta_time;
 }
+
+_internal void
+ZINK_DrawCircle(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius)
+{
+	int x = radius;
+	int y = 0;
+	int midpoint = 0;
+
+	while (x >= y)
+	{
+		SDL_RenderPoint(renderer, center_x + x, center_y + y);
+		SDL_RenderPoint(renderer, center_x + y, center_y + x);
+		SDL_RenderPoint(renderer, center_x - y, center_y + x);
+		SDL_RenderPoint(renderer, center_x - x, center_y + y);
+		SDL_RenderPoint(renderer, center_x - x, center_y - y);
+		SDL_RenderPoint(renderer, center_x - y, center_y - x);
+		SDL_RenderPoint(renderer, center_x + y, center_y - x);
+		SDL_RenderPoint(renderer, center_x + x, center_y - y);
+
+		if (midpoint <= 0)
+		{
+			y++;
+			midpoint += 2*y + 1;
+		}
+		else
+		{
+			x--;
+			midpoint -= 2*x + 1;
+		}
+	}
+}
