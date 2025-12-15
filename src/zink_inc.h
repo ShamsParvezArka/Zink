@@ -15,7 +15,9 @@
 #endif
 
 #include "SDL3/sdl.h"
+#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_image.h"
+#include "SDL3/SDL_ttf.h"
 
 #include "zink_renderer.h"
 #include "zink_utils.h"
