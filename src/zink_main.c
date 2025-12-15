@@ -12,7 +12,7 @@ wWinMain(HINSTANCE instance, HINSTANCE prev_instance, PWSTR cmd_line, I32 show_c
 I32
 main(I32 argc, String8 *argv)
 {
-  /*
+  /* 
   ** NOTE: No implementaiton for linux yet. If you want then feel free to
   ** fork this repository;
   */

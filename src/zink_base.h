@@ -1,7 +1,9 @@
 #ifndef ZINK_BASE_H
 #define ZINK_BASE_H
 
-//~ arka: Platform Independent --------------------------------------------------------------------------------
+////////////////////////////////
+//~ NOTE: platform independent includes
+//
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -81,7 +83,10 @@ String8Len(String8 str)
   return (p - str);
 }
 
-// todo(arka): make this stable --------------------------------------------------------------------------------
+////////////////////////////////////////////////////////////
+// TODO(arka): make this stable --------------------------------------------------------------------------------
+//
+
 // _internal String8Array
 // InitString8Array(U64 size)
 // {

@@ -1,5 +1,5 @@
 _global Win32_State state = {};
-_global Win32_Context context = {};
+_global Win32_Context win32_context = {};
 
 I32 WINAPI
 Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
@@ -8,14 +8,14 @@ Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_l
   Win32SpawnConsole();
 #endif
   
-  context.window_class.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
-  context.window_class.lpfnWndProc = Win32MainWindowCallback;
-  context.window_class.hInstance = instance;
-  context.window_class.lpszClassName = "ZINK_Class";
+  win32_context.window_class.style = CS_OWNDC|CS_HREDRAW|CS_VREDRAW;
+  win32_context.window_class.lpfnWndProc = Win32MainWindowCallback;
+  win32_context.window_class.hInstance = instance;
+  win32_context.window_class.lpszClassName = "ZINK_Class";
 
   HHOOK global_hook = SetWindowsHookExA(WH_KEYBOARD_LL , &Win32GlobalHookCallback, 0, 0);
 
-  if (RegisterClass(&context.window_class))
+  if (RegisterClass(&win32_context.window_class))
   {
     HWND tray_handle = CreateWindowExA(0,
                                        "ZINK_Class",
@@ -29,28 +29,28 @@ Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_l
                                        NULL,
                                        instance,
                                        NULL);
-    context.tray_menu = CreatePopupMenu();
-    AppendMenuA(context.tray_menu, MF_STRING, ID_TRAY_EXIT, "Exit");
-    context.tray_data.cbSize = sizeof(context.tray_data);
-    context.tray_data.hWnd = tray_handle;
-    context.tray_data.uID = 1;
-    context.tray_data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
-    context.tray_data.uCallbackMessage = WM_TRAYICON;
-    context.tray_data.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ZINK_ICON));
-    strcpy(context.tray_data.szTip, "ZINK");
-    Shell_NotifyIcon(NIM_ADD, &context.tray_data);    
+    win32_context.tray_menu = CreatePopupMenu();
+    AppendMenuA(win32_context.tray_menu, MF_STRING, ID_TRAY_EXIT, "Exit");
+    win32_context.tray_data.cbSize = sizeof(win32_context.tray_data);
+    win32_context.tray_data.hWnd = tray_handle;
+    win32_context.tray_data.uID = 1;
+    win32_context.tray_data.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+    win32_context.tray_data.uCallbackMessage = WM_TRAYICON;
+    win32_context.tray_data.hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ZINK_ICON));
+    strcpy(win32_context.tray_data.szTip, "ZINK");
+    Shell_NotifyIcon(NIM_ADD, &win32_context.tray_data);    
 
     state.running = true;
     while (state.running)
     {
-      if (PeekMessage(&context.message, 0, 0, 0, PM_REMOVE))
+      if (PeekMessage(&win32_context.message, 0, 0, 0, PM_REMOVE))
       {
-        if (context.message.message == WM_QUIT)
+        if (win32_context.message.message == WM_QUIT)
         {
           state.running = false;
         }
-        TranslateMessage(&context.message);
-        DispatchMessage(&context.message);
+        TranslateMessage(&win32_context.message);
+        DispatchMessage(&win32_context.message);
       }
       else
       {
@@ -86,11 +86,11 @@ Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_l
 _internal void
 Win32TakeScreenshot(HDC screen, I32 width, I32 height)
 {
-  HDC context = CreateCompatibleDC(screen);
+  HDC win32_context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
-  SelectObject(context, bmp_handle);
+  SelectObject(win32_context, bmp_handle);
 
-  BOOL sig = BitBlt(context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
+  BOOL sig = BitBlt(win32_context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
   if (sig != 0)
   {
     String8 temp_file_path = {};
@@ -100,7 +100,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
       strcat(temp_file_path, "zink_screenshot.bmp");
 
       // TODO: Bullet proof this ---------------------------------------------
-      Win32ExportBitmap(bmp_handle, context, temp_file_path);      
+      Win32ExportBitmap(bmp_handle, win32_context, temp_file_path);      
     }
   }
   else
@@ -109,7 +109,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   }
 
   DeleteObject(bmp_handle);
-  DeleteDC(context);
+  DeleteDC(win32_context);
 }
 
 _internal
@@ -123,7 +123,7 @@ void Win32SpawnConsole()
 }
 
 _internal int
-Win32ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
+Win32ExportBitmap(HBITMAP bitmap_handle, HDC win32_context, LPCSTR filename)
 {
   BITMAP bmp;
   GetObject(bitmap_handle, sizeof(BITMAP), &bmp);
@@ -146,7 +146,7 @@ Win32ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename)
   HANDLE dbi = GlobalAlloc(GHND, bmp_size);
   char *lpbitmap = (char*)GlobalLock(dbi);
 
-  BOOL sig = GetDIBits(context,
+  BOOL sig = GetDIBits(win32_context,
                        bitmap_handle,
                        0,
                        (UINT)bmp.bmHeight,
@@ -199,7 +199,7 @@ Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM 
         POINT pt;
         GetCursorPos(&pt);
         SetForegroundWindow(window_handle);
-        TrackPopupMenu(context.tray_menu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, window_handle, NULL);
+        TrackPopupMenu(win32_context.tray_menu, TPM_BOTTOMALIGN | TPM_LEFTALIGN, pt.x, pt.y, 0, window_handle, NULL);
         PostMessage(window_handle, WM_NULL, 0, 0);
       }
     } break;
@@ -219,7 +219,7 @@ Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM 
 
     case WM_DESTROY:
     {
-      Shell_NotifyIcon(NIM_DELETE, &context.tray_data);    
+      Shell_NotifyIcon(NIM_DELETE, &win32_context.tray_data);    
       PostQuitMessage(0);
     } break;
 
