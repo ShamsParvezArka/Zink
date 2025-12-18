@@ -165,10 +165,10 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	SDL_SetRenderTarget(context->renderer, context->texture);
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 150);
 
-	if (input->key_down[SDLK_F]) brush_size++;	
-	if (input->key_down[SDLK_D]) brush_size--;
+	if (input->key_down[SDLK_F]) brush_size = ZINK_Clamp(++brush_size, 4.0f, 30.0f);	
+	if (input->key_down[SDLK_D]) brush_size = ZINK_Clamp(--brush_size, 4.0f, 30.0f);
 	
-	ZINK_DrawCircle(context->renderer, input->mouse_x, input->mouse_y, brush_size);
+	ZINK_DrawCircleFilled(context->renderer, input->mouse_x, input->mouse_y, brush_size);
 	SDL_SetRenderTarget(context->renderer, NULL);		
 	
 	//~ NOTE(Rendering Layer): Button, Font etc --------------------------------------------------------------------------------
