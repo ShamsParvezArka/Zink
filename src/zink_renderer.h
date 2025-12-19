@@ -100,6 +100,8 @@ struct ZINK_InputState
   F32 mouse_y;
   F32 world_x;
   F32 world_y;
+	F32 last_world_x;
+	F32 last_world_y;
   F32 wheel_delta;
 
   B32 mouse_drag;
@@ -118,7 +120,6 @@ _internal void ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *inpu
 _internal void ZINK_UpdateInputState(ZINK_InputState *input);
 _internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 texture_width, F32 texture_height, F32 delta_time);
 _internal void ZINK_ResetCamera(ZINK_Camera2D *cam, F32 texture_width, F32 texture_height);
-
 _internal void ZINK_DestroyContext(ZINK_Context *context);
 
 #endif // ZINK_RENDERER_H

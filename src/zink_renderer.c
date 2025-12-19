@@ -54,11 +54,6 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
     SDL_Log("SDL_Error: %s\n", SDL_GetError());
     return false;
   }
-	if (!TTF_Init())
-	{
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());
-    return false;		
-	}
   
   I32 window_flags = SDL_WINDOW_INPUT_FOCUS |
                      SDL_WINDOW_MOUSE_FOCUS |
@@ -88,7 +83,7 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
   
   if (vsync_flag) SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE);
   else            SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_DISABLE);
-
+	
 	////////////////////////////////
 	//~ NOTE: Draw texture
 	//
@@ -122,7 +117,7 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
 		SDL_RenderTexture(context->renderer, temp, NULL, NULL);		
 	}
 	SDL_SetRenderTarget(context->renderer, NULL);
-	
+
   context->dest.w = context->window_width;
   context->dest.h = context->window_height;
 
@@ -186,7 +181,25 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 
 	if (input->mouse_down[SDL_BUTTON_LEFT])
 	{
-		ZINK_DrawCircleFilled(context->renderer, input->world_x, input->world_y, brush_size);		
+		F32 dt_x = input->world_x - input->last_world_x;
+		F32 dt_y = input->world_y - input->last_world_y;
+		F32 distance = sqrtf((dt_x * dt_x) + (dt_y * dt_y));
+
+		if (distance > 0.0f)
+		{
+			F32 c = 1.0f / distance;
+			F32 direction_x = dt_x * c;
+			F32 direction_y = dt_y * c;
+			for (F32 idx = 0.0f; idx <= distance; idx += 0.1f)
+			{
+				F32 point_x = input->last_world_x + direction_x * idx;
+				F32 point_y = input->last_world_y + direction_y * idx;
+				ZINK_DrawCircleFilled(context->renderer, point_x, point_y, brush_size);					;
+			}
+		}
+
+		input->last_world_x = input->world_x;
+		input->last_world_y = input->world_y;		
 	}
 	SDL_SetRenderTarget(context->renderer, NULL);
 	
@@ -210,11 +223,12 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	////////////////////////////////
 	//~ NOTE(Rendering Layer): Button, Font etc
 	//
-	SDL_RenderDebugTextFormat(context->renderer, 5, 5, "Brush Size: %d", brush_size);
+	SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 15, "Mouse Drag: %d", input->mouse_drag);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 25, "Mouse LClick: %d", input->mouse_down[SDL_BUTTON_LEFT]);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 35, "Mouse RClick: %d", input->mouse_down[SDL_BUTTON_RIGHT]);
-	SDL_RenderDebugTextFormat(context->renderer, 5, 45, "Mouse RClickP: %d", input->mouse_pressed[SDL_BUTTON_RIGHT]);			
+	SDL_RenderDebugTextFormat(context->renderer, 5, 45, "Current Mouse (X, Y): (%f, %f)", input->world_x, input->world_y);
+	SDL_RenderDebugTextFormat(context->renderer, 5, 55, "Last Mouse (X, Y)   : (%f, %f)", input->last_world_x, input->last_world_y);
 
   SDL_RenderPresent(context->renderer);
 }
@@ -223,11 +237,11 @@ _internal void
 ZINK_DestroyContext(ZINK_Context *context)
 {
   if (!context->initialized) return;
-
+	
+	SDL_DestroyTexture(context->texture);
+	SDL_DestroySurface(context->surface);	
 	SDL_DestroyRenderer(context->renderer);
 	SDL_DestroyWindow(context->window);
-	SDL_DestroySurface(context->surface);
-	SDL_DestroyTexture(context->texture);
 
 	// TTF_CloseFont(context->font.font);
 	// SDL_DestroySurface(context->font.surface);
@@ -265,8 +279,8 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       case SDL_EVENT_KEY_DOWN:
       {
         SDL_Keycode key = event.key.key;
+				
         if (key == SDLK_ESCAPE) running = false;
-
         if (key == SDLK_D) { KeyRegister(input->key_down, input->key_released, SDLK_D); }
         if (key == SDLK_F) { KeyRegister(input->key_down, input->key_released, SDLK_F); }				
         if (key == SDLK_R) { KeyRegister(input->key_down, input->key_released, SDLK_R); } 
@@ -275,6 +289,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       case SDL_EVENT_KEY_UP:
       {
         SDL_Keycode key = event.key.key;
+
         if (key == SDLK_D) { KeyUnregister(input->key_down, input->key_released, SDLK_D); }
         if (key == SDLK_F) { KeyUnregister(input->key_down, input->key_released, SDLK_F); }								
         if (key == SDLK_R) { KeyUnregister(input->key_down, input->key_released, SDLK_R); }
@@ -290,6 +305,8 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       {
 				if (event.button.button == SDL_BUTTON_LEFT)
         {
+					input->last_world_x = input->world_x;
+					input->last_world_y = input->world_y;					
           KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
         }				
         if (event.button.button == SDL_BUTTON_RIGHT)
