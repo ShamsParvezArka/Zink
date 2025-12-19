@@ -22,6 +22,12 @@
     released[key] = true;                       \
   } while (0);
 
+#define KeyRegisterOnce(pressed, key)						\
+	do																						\
+	{																							\
+		pressed[key] = true;												\
+	} while(0)																		\
+
 typedef struct ZINK_DebugFont ZINK_DebugFont;
 struct ZINK_DebugFont
 {
@@ -51,6 +57,7 @@ struct ZINK_Context
 
 	SDL_Surface *surface;
   SDL_Texture *texture;
+
   SDL_FRect dest;
 
   ZINK_Camera2D camera;
@@ -96,6 +103,7 @@ struct ZINK_InputState
   F32 wheel_delta;
 
   B32 mouse_drag;
+	B32 mouse_pressed[5];
   B32 mouse_down[5];
   B32 mouse_released[5];
   B32 key_down[SDL_SCANCODE_COUNT];
@@ -105,6 +113,7 @@ struct ZINK_InputState
 void ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 image_path);
 
 _internal B32  ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag, String8 image_path);
+_internal B32  ZINK_InitInputState(ZINK_InputState *input);
 _internal void ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_time);
 _internal void ZINK_UpdateInputState(ZINK_InputState *input);
 _internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, F32 texture_width, F32 texture_height, F32 delta_time);
