@@ -1,12 +1,11 @@
 _global B32 running;
 
-//~ TODO: remove these global variables  --------------------------------------------------------------------------------
+// TODO: remove these global variables
 _global F32 drag_start_mouse_x;
 _global F32 drag_start_mouse_y;
 _global F32 drag_start_target_x;
 _global F32 drag_start_target_y;
 
-//~ TODO: group them together --------------------------------------------------------------------------------
 _global I32 brush_size = 4.0f;
 
 void
@@ -16,7 +15,7 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 image_path)
   String8 driver = "direct3d11";
 	DeferScope(ZINK_InitContext(&zink_context, width, height, title, driver, true, image_path), ZINK_DestroyContext(&zink_context))
 	{
-		// TODO(arka): should I implement this!? --------------------------------------------------------------------------------
+		// TODO(arka): should I implement this!?
 		// ZINK_Toolbar toolbar = {};
 		// U32 total_tools = 3;
 		// String8 tool_path[100] = {"..\\assets\\draw.png",
@@ -41,7 +40,7 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 image_path)
 _internal B32
 ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, String8 driver, B32 vsync_flag, String8 image_path)
 {
-	//~ NOTE: Window Setup --------------------------------------------------------------------------------
+	// NOTE: Window Setup
   context->window_width = width;
   context->window_height = height;
   context->window_title = title;
@@ -84,23 +83,31 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
   if (vsync_flag) SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE);
   else            SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_DISABLE);
 	
-	////////////////////////////////
-	//~ NOTE: Draw texture
-	//
-  context->surface = IMG_Load(image_path);
-  if (!context->surface)
-  {
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());
-    return false;
-  }
+	// NOTE: Draw texture
+	SDL_Surface *tmp;
+	DeferScope(tmp = IMG_Load(image_path), SDL_DestroySurface(tmp))
+	{
+		if (!tmp)
+		{
+			SDL_Log("SDL_Error: %s\n", SDL_GetError());
+			return false;
+		}
+		
+		context->surface = SDL_ConvertSurface(tmp, SDL_PIXELFORMAT_RGBA8888);
+		if (!context->surface)
+		{
+			SDL_Log("SDL_Error: %s\n", SDL_GetError());
+			return false;
+		}		
+	}
 		
 	context->texture_width  = context->surface->w;
 	context->texture_height = context->surface->h;	
 	context->texture = SDL_CreateTexture(context->renderer,
-																						SDL_PIXELFORMAT_RGBA8888,
-		                                        SDL_TEXTUREACCESS_TARGET,
-																						context->texture_width,
-																						context->texture_height);
+																			 SDL_PIXELFORMAT_RGBA8888,
+																			 SDL_TEXTUREACCESS_STREAMING,
+																			 context->surface->w,
+																			 context->surface->h);
 	if (!context->texture)
   {
     SDL_Log("SDL_Error: %s\n", SDL_GetError());    
@@ -154,9 +161,7 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
 _internal void
 ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_time)
 {
-	////////////////////////////////
-	//~  NOTE: Update input & camera
-	//
+	// NOTE: Update input & camera
 	ZINK_UpdateInputState(input);
 	ZINK_UpdateCamera(&context->camera,
 										input,
@@ -167,62 +172,60 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
   context->dest.w = context->texture_width * context->camera.zoom;
   context->dest.h = context->texture_height * context->camera.zoom;	
 
-	////////////////////////////////
-	//~ NOTE: Update brush size
-	//
+	// NOTE: Update brush size
 	if (input->key_down[SDLK_F]) { brush_size = ZINK_Clamp(++brush_size, 4.0f, 30.0f); }
 	if (input->key_down[SDLK_D]) { brush_size = ZINK_Clamp(--brush_size, 4.0f, 30.0f); }
 
-	////////////////////////////////
-	//~ NOTE:(Rendering Layer): Painting
-	//
+	// NOTE:(Rendering Layer): Painting
 	SDL_SetRenderTarget(context->renderer, context->texture);
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 255);
 
 	if (input->mouse_down[SDL_BUTTON_LEFT])
 	{
+		SDL_LockSurface(context->surface);
+		U32 *pixels = (U32 *)context->surface->pixels;
+		I32 pitch   = context->surface->pitch / 4;
+
 		F32 dt_x = input->world_x - input->last_world_x;
 		F32 dt_y = input->world_y - input->last_world_y;
 		F32 distance = sqrtf((dt_x * dt_x) + (dt_y * dt_y));
 
 		if (distance > 0.0f)
 		{
-			F32 c = 1.0f / distance;
-			F32 direction_x = dt_x * c;
-			F32 direction_y = dt_y * c;
+			F32 inverse = 1.0f / distance;
+			F32 direction_x = dt_x * inverse;
+			F32 direction_y = dt_y * inverse;
 			for (F32 idx = 0.0f; idx <= distance; idx += 0.1f)
 			{
 				F32 point_x = input->last_world_x + direction_x * idx;
 				F32 point_y = input->last_world_y + direction_y * idx;
-				ZINK_DrawCircleFilled(context->renderer, point_x, point_y, brush_size);					;
+				ZINK_DrawCircleFilledCPU(pixels, pitch,
+																 context->texture_width, context->texture_height,
+																 point_x, point_y, brush_size);
 			}
 		}
-
+		
+		SDL_UnlockSurface(context->surface);
 		input->last_world_x = input->world_x;
-		input->last_world_y = input->world_y;		
+		input->last_world_y = input->world_y;
 	}
 	SDL_SetRenderTarget(context->renderer, NULL);
 	
 	////////////////////////////////
-	//~ NOTE(Rendering Layer): Clear background
+	// NOTE(Rendering Layer): Clear background
 	// 
   SDL_SetRenderDrawColor(context->renderer, 29, 29, 29, 255);
   SDL_RenderClear(context->renderer);
 
-	////////////////////////////////
-	//~ NOTE(Rendering Layer): Draw texture
-	//
+	// NOTE(LAYER): Draw texture
+	SDL_UpdateTexture(context->texture, NULL, context->surface->pixels, context->surface->pitch);
 	SDL_RenderTexture(context->renderer, context->texture, NULL, &context->dest);
 
-	////////////////////////////////
-	//~ NOTE(Rendering Layer): Brush preview
-	//
+	// NOTE(Rendering Layer): Brush preview
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 150);	
 	ZINK_DrawCircle(context->renderer, input->mouse_x, input->mouse_y, brush_size);
 	
-	////////////////////////////////
-	//~ NOTE(Rendering Layer): Button, Font etc
-	//
+	// NOTE(Rendering Layer): Button, Font etc
 	SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 15, "Mouse Drag: %d", input->mouse_drag);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 25, "Mouse LClick: %d", input->mouse_down[SDL_BUTTON_LEFT]);
@@ -237,7 +240,7 @@ _internal void
 ZINK_DestroyContext(ZINK_Context *context)
 {
   if (!context->initialized) return;
-	
+
 	SDL_DestroyTexture(context->texture);
 	SDL_DestroySurface(context->surface);	
 	SDL_DestroyRenderer(context->renderer);
@@ -274,9 +277,11 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       {
         running = false;
       } break;
-
-      // KEYBOARD EVENTS --------------------------------------------------------------------------------
-      case SDL_EVENT_KEY_DOWN:
+			
+			////////////////////////////////
+      // KEYBOARD EVENTS
+			//
+			case SDL_EVENT_KEY_DOWN:
       {
         SDL_Keycode key = event.key.key;
 				
@@ -285,7 +290,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
         if (key == SDLK_F) { KeyRegister(input->key_down, input->key_released, SDLK_F); }				
         if (key == SDLK_R) { KeyRegister(input->key_down, input->key_released, SDLK_R); } 
       } break;
-
+			
       case SDL_EVENT_KEY_UP:
       {
         SDL_Keycode key = event.key.key;
@@ -295,7 +300,9 @@ ZINK_UpdateInputState(ZINK_InputState *input)
         if (key == SDLK_R) { KeyUnregister(input->key_down, input->key_released, SDLK_R); }
       } break;      
 
-      // MOUSE EVENTS --------------------------------------------------------------------------------
+			////////////////////////////////
+      // MOUSE EVENTS
+			//
       case SDL_EVENT_MOUSE_WHEEL:
       {
         input->wheel_delta = event.wheel.y;
@@ -306,7 +313,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
 				if (event.button.button == SDL_BUTTON_LEFT)
         {
 					input->last_world_x = input->world_x;
-					input->last_world_y = input->world_y;					
+					input->last_world_y = input->world_y;
           KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
         }				
         if (event.button.button == SDL_BUTTON_RIGHT)
