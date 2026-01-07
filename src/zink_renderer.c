@@ -15,23 +15,24 @@ ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 image_path)
   String8 driver = "direct3d11";
 	DeferScope(ZINK_InitContext(&zink_context, width, height, title, driver, true, image_path), ZINK_DestroyContext(&zink_context))
 	{
-		// TODO(arka): should I implement this!?
-		// ZINK_Toolbar toolbar = {};
-		// U32 total_tools = 3;
-		// String8 tool_path[100] = {"..\\assets\\draw.png",
-		//                           "..\\assets\\eraser.png",
-		//                           "..\\assets\\move.png"};
-  
-		//ZINK_InitToolbar(&renderer, &toolbar, tool_path, total_tools);
-
 		ZINK_InputState input = {};
 		ZINK_InitInputState(&input);
-		
+
+		U64 last_tick = 0;
 		running = true;
 		while (running)
 		{
+			U64 current_tick = SDL_GetTicks();
+			
 			F32 delta_time = ZINK_GetDeltaTime();
-			ZINK_UpdateAndRender(&zink_context, &input, delta_time);   
+			ZINK_UpdateAndRender(&zink_context, &input, delta_time);
+
+			zink_context.fps++;
+			if (current_tick > last_tick + 1000)
+			{
+				last_tick = current_tick;
+				zink_context.fps = 0;
+			}
 		}
 	}
   SDL_Quit();
@@ -47,12 +48,9 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
   context->driver = driver;
   context->vsync = vsync_flag;
   context->initialized = true;
+	context->fps = 0;
   
-  if (!SDL_Init(SDL_INIT_VIDEO))
-  {
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());
-    return false;
-  }
+  Require(SDL_Init(SDL_INIT_VIDEO));
   
   I32 window_flags = SDL_WINDOW_INPUT_FOCUS |
                      SDL_WINDOW_MOUSE_FOCUS |
@@ -61,72 +59,57 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
 																		 context->window_width,
 																		 context->window_height,
 																		 window_flags);
-  if (!context->window)
-  {
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());
-    return false;
-  }
+  Require(context->window);
 
   SDL_ShowCursor();
-  if (!SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT))) return false;
-  if (!SDL_SetWindowFocusable(context->window, true)) return false;  
-  if (!SDL_RaiseWindow(context->window)) return false;
+  if (!SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT))) { return false; }
+  if (!SDL_SetWindowFocusable(context->window, true))                    { return false; }
+  if (!SDL_RaiseWindow(context->window))                                 { return false; }
 
   context->renderer = SDL_CreateRenderer(context->window, context->driver);
-  if (!context->renderer)
-  {
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());
-    return false;
-  }
+  Require(context->renderer);
 	SDL_SetRenderDrawBlendMode(context->renderer, SDL_BLENDMODE_BLEND);	
   
   if (vsync_flag) SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE);
   else            SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_DISABLE);
 	
-	// NOTE: Draw texture
+	// NOTE: Screenshot texture
 	SDL_Surface *tmp;
 	DeferScope(tmp = IMG_Load(image_path), SDL_DestroySurface(tmp))
 	{
-		if (!tmp)
-		{
-			SDL_Log("SDL_Error: %s\n", SDL_GetError());
-			return false;
-		}
-		
+	  Require(tmp);
 		context->surface = SDL_ConvertSurface(tmp, SDL_PIXELFORMAT_RGBA8888);
-		if (!context->surface)
-		{
-			SDL_Log("SDL_Error: %s\n", SDL_GetError());
-			return false;
-		}		
+		Require(context->surface);
 	}
-		
 	context->texture_width  = context->surface->w;
 	context->texture_height = context->surface->h;	
 	context->texture = SDL_CreateTexture(context->renderer,
 																			 SDL_PIXELFORMAT_RGBA8888,
 																			 SDL_TEXTUREACCESS_STREAMING,
-																			 context->surface->w,
-																			 context->surface->h);
-	if (!context->texture)
-  {
-    SDL_Log("SDL_Error: %s\n", SDL_GetError());    
-    return false;
-  }
-
+																			 context->texture_width,
+																			 context->texture_height);
+	Require(context->texture);
 	SDL_SetTextureBlendMode(context->texture, SDL_BLENDMODE_BLEND);
 
-	// Copy initial image into draw_texture
+	// NOTE: Copy initial image into screenshot texture
 	SDL_Texture *temp;
 	DeferScope(temp = SDL_CreateTextureFromSurface(context->renderer, context->surface), SDL_DestroyTexture(temp))
 	{
 		SDL_SetRenderTarget(context->renderer, context->texture);
 		SDL_RenderTexture(context->renderer, temp, NULL, NULL);		
 	}
-	SDL_SetRenderTarget(context->renderer, NULL);
 
   context->dest.w = context->window_width;
   context->dest.h = context->window_height;
+
+	// NOTE: Sprite texture
+	String8 sprite_path = "..\\assets\\keys.png";
+	DeferScope(tmp = IMG_Load(sprite_path), SDL_DestroySurface(tmp))
+	{
+	  Require(tmp);
+		context->sprite = SDL_CreateTextureFromSurface(context->renderer, tmp);
+		Require(context->texture);
+	}
 
   context->camera.offset.x = context->window_width * 0.5f;
   context->camera.offset.y = context->window_height * 0.5f;
@@ -136,25 +119,6 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
   context->camera.zoom = 1.0f;
   context->camera.zoom_target = 1.0f;
 
-	//~ NOTE: Custom Font --------------------------------------------------------------------------------
-#if 0
-	String8 font_path = "..\\assets\\georgia.ttf";
-	context->font.size = 24;
-	context->font.font = TTF_OpenFont(font_path, context->font.size);
-	if (!context->font.font)
-	{
-		SDL_Log("SDL_Error: %s\n", SDL_GetError());    
-		return false;			
-	}
-	context->font.color.r = 255;
-	context->font.color.g = 255;
-	context->font.color.b = 255;
-	context->font.color.a = 255;
-
-	context->font.surface = TTF_RenderText_Solid(context->font.font, "Hello, World!", 13, context->font.color);
-	context->font.texture = SDL_CreateTextureFromSurface(context->renderer, context->font.surface);
-#endif
-	
   return true;
 }
 
@@ -180,7 +144,7 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	SDL_SetRenderTarget(context->renderer, context->texture);
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 255);
 
-	if (input->mouse_down[SDL_BUTTON_LEFT])
+	if (input->mouse_down[SDL_BUTTON_LEFT] && input->brush_mode == DRAW)
 	{
 		SDL_LockSurface(context->surface);
 		U32 *pixels = (U32 *)context->surface->pixels;
@@ -211,9 +175,8 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	}
 	SDL_SetRenderTarget(context->renderer, NULL);
 	
-	////////////////////////////////
+
 	// NOTE(Rendering Layer): Clear background
-	// 
   SDL_SetRenderDrawColor(context->renderer, 29, 29, 29, 255);
   SDL_RenderClear(context->renderer);
 
@@ -224,6 +187,53 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	// NOTE(Rendering Layer): Brush preview
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 150);	
 	ZINK_DrawCircle(context->renderer, input->mouse_x, input->mouse_y, brush_size);
+
+	// NOTE(Sprite Layer)
+	// This is temporary. Soon it'll be moved to somewhere else
+	F32 sprite_scale_factor = 0.5;
+	
+	SDL_FRect source0 = {0, 64 * 0, 64, 64};
+	SDL_FRect destination0 = {context->window_width - 32, context->window_height - 32,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_R])     { source0.x = 64; }
+	if (input->key_released[SDLK_R]) { source0.x = 0; }
+	SDL_RenderTexture(context->renderer, context->sprite, &source0, &destination0);
+
+	SDL_FRect source1 = {0, 64 * 1, 64, 64};
+	SDL_FRect destination1 = {context->window_width - 32, context->window_height - 32 * 2,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_E])     { source1.x = 64; }
+	if (input->key_released[SDLK_E]) { source1.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &source1, &destination1);
+
+	SDL_FRect source2 = {0, 64 * 2, 64, 64};
+	SDL_FRect destination2 = {context->window_width - 32, context->window_height - 32 * 3,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_D])     { source2.x = 64; }
+	if (input->key_released[SDLK_D]) { source2.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &source2, &destination2);
+
+	SDL_FRect source3 = {0, 64 * 3, 64, 64};
+	SDL_FRect destination3 = {context->window_width - 32, context->window_height - 32 * 4,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_F])     { source3.x = 64; }
+	if (input->key_released[SDLK_F]) { source3.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &source3, &destination3);
+
+	SDL_FRect source4 = {0, 64 * 4, 64, 64};
+	SDL_FRect destination4 = {context->window_width - 32, context->window_height - 32 * 5,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->mouse_down[SDL_BUTTON_LEFT])     { source4.x = 64; }
+	if (input->mouse_released[SDL_BUTTON_LEFT]) { source4.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &source4, &destination4);
+
+	SDL_FRect source5 = {0, 64 * 5, 64, 64};
+	SDL_FRect destination5 = {context->window_width - 32, context->window_height - 32 * 6,
+		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->mouse_down[SDL_BUTTON_RIGHT])     { source5.x = 64; }
+	if (input->mouse_released[SDL_BUTTON_RIGHT]) { source5.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &source5, &destination5);
+
 	
 	// NOTE(Rendering Layer): Button, Font etc
 	SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
@@ -245,15 +255,12 @@ ZINK_DestroyContext(ZINK_Context *context)
 	SDL_DestroySurface(context->surface);	
 	SDL_DestroyRenderer(context->renderer);
 	SDL_DestroyWindow(context->window);
-
-	// TTF_CloseFont(context->font.font);
-	// SDL_DestroySurface(context->font.surface);
-	// SDL_DestroyTexture(context->font.texture);	
 }
 
 _internal B32
 ZINK_InitInputState(ZINK_InputState *input)
 {
+	input->brush_mode = DRAW;
   memset(input->mouse_down,     0, sizeof(input->mouse_down[0]) * 5);
   memset(input->mouse_released, 0, sizeof(input->mouse_released[0]) * 5);
   memset(input->key_down,       0, sizeof(input->key_down[0]) * SDL_SCANCODE_COUNT);
@@ -279,7 +286,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       } break;
 			
 			////////////////////////////////
-      // KEYBOARD EVENTS
+      // NOTE: KEYBOARD EVENTS
 			//
 			case SDL_EVENT_KEY_DOWN:
       {
@@ -288,7 +295,18 @@ ZINK_UpdateInputState(ZINK_InputState *input)
         if (key == SDLK_ESCAPE) running = false;
         if (key == SDLK_D) { KeyRegister(input->key_down, input->key_released, SDLK_D); }
         if (key == SDLK_F) { KeyRegister(input->key_down, input->key_released, SDLK_F); }				
-        if (key == SDLK_R) { KeyRegister(input->key_down, input->key_released, SDLK_R); } 
+        if (key == SDLK_R) { KeyRegister(input->key_down, input->key_released, SDLK_R); }	
+
+				if (key == SDLK_E && input->brush_mode == DRAW)
+				{
+					input->brush_mode = ERASE;
+					KeyRegister(input->key_down, input->key_released, SDLK_E);
+				}
+				else if (key == SDLK_E && input->brush_mode == ERASE)
+				{
+					input->brush_mode = DRAW;					
+					KeyUnregister(input->key_down, input->key_released, SDLK_E);
+				}
       } break;
 			
       case SDL_EVENT_KEY_UP:
@@ -301,7 +319,7 @@ ZINK_UpdateInputState(ZINK_InputState *input)
       } break;      
 
 			////////////////////////////////
-      // MOUSE EVENTS
+      // NOTE: MOUSE EVENTS
 			//
       case SDL_EVENT_MOUSE_WHEEL:
       {
