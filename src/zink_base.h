@@ -1,9 +1,7 @@
 #ifndef ZINK_BASE_H
 #define ZINK_BASE_H
 
-////////////////////////////////
-//~ NOTE: platform independent includes
-//
+// NOTE: platform independent includes
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -14,6 +12,11 @@
 #define _global   static
 #define _local    static
 #define _internal static
+
+#define Stringify_(S) #S
+#define Stringify(S) Stringify_(S)
+#define Glue_(a, b) a##b
+#define Glue(a, b) Glue_(a, b)
 
 #define DeferScope(begin, end)        for (U32 _i_ = ((begin), 0); !_i_; _i_ += 1, (end))
 #define DeferScopeChecked(begin, end) for (U32 _i_ = 2 * !(begin); (_i_ == 2 ? ((end), 0) : !_i_); _i_ += 1, (end))
