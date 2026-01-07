@@ -4,9 +4,6 @@
 // renderer --------------------------------------------------------------
 #define ZINC_VSYNC_ENABLE  1
 #define ZINC_VSYNC_DISABLE 0
-// ui --------------------------------------------------------------------
-#define BUTTON_SIZE 30
-#define BUTTON_GAP 10
 
 // input -----------------------------------------------------------------
 #define KeyRegister(down, released, key)        \
@@ -27,6 +24,23 @@
 	{																							\
 		pressed[key] = true;												\
 	} while(0)																		\
+
+#define Require(expr)																										\
+	do																																		\
+	{																																			\
+		if (!(expr))																												\
+		{																																		\
+			SDL_Log("Require failer: %s\nSDL_Error: %s\n", Stringify(expr), SDL_GetError()); \
+			assert((expr));																										\
+		}																																		\
+	}	while (0)																														\
+
+typedef enum ZINK_BrushMode ZINK_BrushMode;
+enum ZINK_BrushMode
+{
+  DRAW,
+  ERASE
+};
 
 typedef struct ZINK_DebugFont ZINK_DebugFont;
 struct ZINK_DebugFont
@@ -57,15 +71,17 @@ struct ZINK_Context
 
 	SDL_Surface *surface;
   SDL_Texture *texture;
+	SDL_Texture *sprite;
 
   SDL_FRect dest;
 
   ZINK_Camera2D camera;
-//	ZINK_DebugFont font;
 
 	String8 window_title;
   String8 driver;
-  
+
+	U64 fps;
+	
   I32 window_width;
   I32 window_height;
 	
@@ -85,17 +101,11 @@ struct ZINK_Button
   B32 active;
 };
 
-typedef struct ZINK_Toolbar ZINK_Toolbar;
-struct ZINK_Toolbar
-{
-  ZINK_Button *tools;
-  U32 capacity;  
-  U32 count;
-};
-
 typedef struct ZINK_InputState ZINK_InputState;
 struct ZINK_InputState
 {
+	ZINK_BrushMode brush_mode;
+	
   F32 mouse_x;
   F32 mouse_y;
   F32 world_x;
