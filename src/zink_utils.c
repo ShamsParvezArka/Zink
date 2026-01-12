@@ -57,7 +57,7 @@ ZINK_DrawCircle(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius)
 }
 
 _internal void
-ZINK_DrawCircleFilled(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius)
+ZINK_DrawCircleFilledDeprecated(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius)
 {
 	I32 x = 0;
 	I32 y = radius;
@@ -91,10 +91,35 @@ ZINK_DrawCircleFilledCPU(U32 *pixels, I32 pitch, I32 width, I32 height, I32 cent
 			{
 				I32 pixel_x = center_x + row;
 				I32 pixel_y = center_y + col;
-				if (pixel_x >= 0 && pixel_y >= 0
-						&& pixel_x < width && pixel_y < height)
+
+				if (pixel_x >= 0 && pixel_y >= 0 &&
+						pixel_x < width && pixel_y < height)
 				{
-					pixels[pixel_y * pitch + pixel_x] = 0xFFFFFFFF;
+					I32 idx = pixel_y * pitch + pixel_x;
+					pixels[idx] = 0xFFFFFFFF;
+				}
+			}
+		}
+	}
+}
+
+_internal void
+ZINK_EraseCircleFilledCPU(U32 *pixels, U32 *original, I32 pitch, I32 width, I32 height, I32 center_x, I32 center_y, I32 radius)
+{
+	for (I32 col = -radius; col <= radius; ++col)
+	{
+		for (I32 row = -radius; row <= radius; ++row)
+		{
+			if (row * row + col * col <= radius * radius)
+			{
+				I32 pixel_x = center_x + row;
+				I32 pixel_y = center_y + col;
+
+				if (pixel_x >= 0 && pixel_y >= 0 &&
+					  pixel_x < width && pixel_y < height)
+				{
+					I32 idx = pixel_y * pitch + pixel_x;
+					pixels[idx] = original[idx];
 				}
 			}
 		}
