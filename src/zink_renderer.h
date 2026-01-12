@@ -1,11 +1,9 @@
 #ifndef ZINK_RENDERER_H
 #define ZINK_RENDERER_H
 
-// renderer --------------------------------------------------------------
 #define ZINC_VSYNC_ENABLE  1
 #define ZINC_VSYNC_DISABLE 0
 
-// input -----------------------------------------------------------------
 #define KeyRegister(down, released, key)        \
   do                                            \
   {                                             \
@@ -81,6 +79,8 @@ struct ZINK_Context
   String8 driver;
 
 	U64 fps;
+
+	U32 *original_pixels;
 	
   I32 window_width;
   I32 window_height;
