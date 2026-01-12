@@ -81,6 +81,11 @@ ZINK_InitContext(ZINK_Context *context, I32 width, I32 height, String8 title, St
 		context->surface = SDL_ConvertSurface(tmp, SDL_PIXELFORMAT_RGBA8888);
 		Require(context->surface);
 	}
+
+	I32 pixel_count = context->surface->w * context->surface->h;
+	context->original_pixels = (U32 *)malloc(pixel_count * sizeof(U32));
+	memcpy(context->original_pixels, context->surface->pixels, pixel_count * sizeof(U32));
+	
 	context->texture_width  = context->surface->w;
 	context->texture_height = context->surface->h;	
 	context->texture = SDL_CreateTexture(context->renderer,
@@ -144,11 +149,13 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	SDL_SetRenderTarget(context->renderer, context->texture);
 	SDL_SetRenderDrawColor(context->renderer, 255, 255, 255, 255);
 
-	if (input->mouse_down[SDL_BUTTON_LEFT] && input->brush_mode == DRAW)
+	U32 *pixels = (U32 *)context->surface->pixels;
+	U32 *original_pixels = context->original_pixels;
+	I32 pitch = context->surface->pitch / sizeof(U32);	
+
+	if (input->mouse_down[SDL_BUTTON_LEFT] && input->brush_mode == ERASE)
 	{
 		SDL_LockSurface(context->surface);
-		U32 *pixels = (U32 *)context->surface->pixels;
-		I32 pitch   = context->surface->pitch / 4;
 
 		F32 dt_x = input->world_x - input->last_world_x;
 		F32 dt_y = input->world_y - input->last_world_y;
@@ -163,9 +170,41 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 			{
 				F32 point_x = input->last_world_x + direction_x * idx;
 				F32 point_y = input->last_world_y + direction_y * idx;
-				ZINK_DrawCircleFilledCPU(pixels, pitch,
+				ZINK_EraseCircleFilledCPU(pixels, original_pixels,
+																	pitch,
+																	context->texture_width, context->texture_height,
+																	(I32)point_x, (I32)point_y,
+																	brush_size);
+			}
+		}
+
+		SDL_UnlockSurface(context->surface);
+		input->last_world_x = input->world_x;
+		input->last_world_y = input->world_y;		
+	}
+
+	if (input->mouse_down[SDL_BUTTON_LEFT] && input->brush_mode == DRAW)
+	{
+		SDL_LockSurface(context->surface);
+
+		F32 dt_x = input->world_x - input->last_world_x;
+		F32 dt_y = input->world_y - input->last_world_y;
+		F32 distance = sqrtf((dt_x * dt_x) + (dt_y * dt_y));
+
+		if (distance > 0.0f)
+		{
+			F32 inverse = 1.0f / distance;
+			F32 direction_x = dt_x * inverse;
+			F32 direction_y = dt_y * inverse;
+			for (F32 idx = 0.0f; idx <= distance; idx += 0.1f)
+			{
+				F32 point_x = input->last_world_x + direction_x * idx;
+				F32 point_y = input->last_world_y + direction_y * idx;
+				ZINK_DrawCircleFilledCPU(pixels,
+																 pitch,
 																 context->texture_width, context->texture_height,
-																 point_x, point_y, brush_size);
+																 (I32)point_x, (I32)point_y,
+																 brush_size);
 			}
 		}
 		
@@ -175,7 +214,6 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	}
 	SDL_SetRenderTarget(context->renderer, NULL);
 	
-
 	// NOTE(Rendering Layer): Clear background
   SDL_SetRenderDrawColor(context->renderer, 29, 29, 29, 255);
   SDL_RenderClear(context->renderer);
@@ -191,7 +229,6 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	// NOTE(Sprite Layer)
 	// This is temporary. Soon it'll be moved to somewhere else
 	F32 sprite_scale_factor = 0.5;
-	
 	SDL_FRect source0 = {0, 64 * 0, 64, 64};
 	SDL_FRect destination0 = {context->window_width - 32, context->window_height - 32,
 		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
@@ -233,7 +270,6 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	if (input->mouse_down[SDL_BUTTON_RIGHT])     { source5.x = 64; }
 	if (input->mouse_released[SDL_BUTTON_RIGHT]) { source5.x = 0; }  
 	SDL_RenderTexture(context->renderer, context->sprite, &source5, &destination5);
-
 	
 	// NOTE(Rendering Layer): Button, Font etc
 	SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
@@ -251,6 +287,9 @@ ZINK_DestroyContext(ZINK_Context *context)
 {
   if (!context->initialized) return;
 
+	free(context->original_pixels);
+	context->original_pixels = 0;
+	
 	SDL_DestroyTexture(context->texture);
 	SDL_DestroySurface(context->surface);	
 	SDL_DestroyRenderer(context->renderer);
