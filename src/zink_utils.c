@@ -96,7 +96,7 @@ ZINK_DrawCircleFilledCPU(U32 *pixels, I32 pitch, I32 width, I32 height, I32 cent
 						pixel_x < width && pixel_y < height)
 				{
 					I32 idx = pixel_y * pitch + pixel_x;
-					pixels[idx] = 0xFFFFFFFF;
+					pixels[idx] = 0xDC143CFF;
 				}
 			}
 		}
