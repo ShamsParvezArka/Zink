@@ -99,7 +99,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
       GetTempPath(MAX_PATH, temp_file_path);
       strcat(temp_file_path, "zink_screenshot.bmp");
 
-      // TODO: Bullet proof this ---------------------------------------------
+      // TODO: Bullet proof this
       Win32ExportBitmap(bmp_handle, win32_context, temp_file_path);      
     }
   }

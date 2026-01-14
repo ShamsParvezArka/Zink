@@ -272,12 +272,14 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	SDL_RenderTexture(context->renderer, context->sprite, &source5, &destination5);
 	
 	// NOTE(Rendering Layer): Button, Font etc
+#if ZINK_DEBUG_MODE
 	SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 15, "Mouse Drag: %d", input->mouse_drag);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 25, "Mouse LClick: %d", input->mouse_down[SDL_BUTTON_LEFT]);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 35, "Mouse RClick: %d", input->mouse_down[SDL_BUTTON_RIGHT]);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 45, "Current Mouse (X, Y): (%f, %f)", input->world_x, input->world_y);
 	SDL_RenderDebugTextFormat(context->renderer, 5, 55, "Last Mouse (X, Y)   : (%f, %f)", input->last_world_x, input->last_world_y);
+#endif
 
   SDL_RenderPresent(context->renderer);
 }
