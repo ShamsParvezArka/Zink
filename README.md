@@ -46,7 +46,11 @@ You can find the executable in the `build` directory.
 | <kbd>Ctrl</kbd> + <kbd>Win</kbd> + <kbd>Space</kbd> | Trigger Zink           |
 | <kbd>Esc</kbd>                                      | Exit Zink              |
 | <kbd>Scroll</kbd> or <kbd>Pinch</kbd>               | Zoom in/out            |
-| Drag with <kbd>left mouse</kbd> button              | Move the image around  |
+| <kbd>right mouse</kbd>                              | Drag around            |
+| <kbd>left mouse</kbd>                               | Draw/Erase             |
+| <kbd>E</kbd>                                        | Toggle Eraser          |
+| <kbd>F</kbd>                                        | Increase brush size    |
+| <kbd>D</kbd>                                        | Decrease brush size    |
 | <kbd>R</kbd>                                        | Reset view             |
 
 # Limitations
