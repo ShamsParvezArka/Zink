@@ -227,49 +227,59 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	ZINK_DrawCircle(context->renderer, input->mouse_x, input->mouse_y, brush_size);
 
 	// NOTE(Sprite Layer)
-	// This is temporary. Soon it'll be moved to somewhere else
-	F32 sprite_scale_factor = 0.5;
-	SDL_FRect source0 = {0, 64 * 0, 64, 64};
-	SDL_FRect destination0 = {context->window_width - 32, context->window_height - 32,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->key_down[SDLK_R])     { source0.x = 64; }
-	if (input->key_released[SDLK_R]) { source0.x = 0; }
-	SDL_RenderTexture(context->renderer, context->sprite, &source0, &destination0);
+	// TODO(Future arka): Take care of this duct taped UI code. Please... 0.0
+	const F32 sprite_scale_factor = 0.5;
+	
+	SDL_FRect src_btn_r = {0, 64 * 0, 64, 64};
+	SDL_FRect dst_btn_r = {context->window_width - 32, context->window_height - 32,
+		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_R])     { src_btn_r.x = 64; }
+	if (input->key_released[SDLK_R]) { src_btn_r.x = 0; }
+	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_r, &dst_btn_r);
 
-	SDL_FRect source1 = {0, 64 * 1, 64, 64};
-	SDL_FRect destination1 = {context->window_width - 32, context->window_height - 32 * 2,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->key_down[SDLK_E])     { source1.x = 64; }
-	if (input->key_released[SDLK_E]) { source1.x = 0; }  
-	SDL_RenderTexture(context->renderer, context->sprite, &source1, &destination1);
+	SDL_FRect src_btn_e = {0, 64 * 1, 64, 64};
+	SDL_FRect dst_btn_e = {context->window_width - 32, context->window_height - 32 * 2,
+		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_E])     { src_btn_e.x = 64; }
+	if (input->key_released[SDLK_E]) { src_btn_e.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_e, &dst_btn_e);
 
-	SDL_FRect source2 = {0, 64 * 2, 64, 64};
-	SDL_FRect destination2 = {context->window_width - 32, context->window_height - 32 * 3,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->key_down[SDLK_D])     { source2.x = 64; }
-	if (input->key_released[SDLK_D]) { source2.x = 0; }  
-	SDL_RenderTexture(context->renderer, context->sprite, &source2, &destination2);
+	SDL_FRect src_btn_d = {0, 64 * 2, 64, 64};
+	SDL_FRect dst_btn_d = {context->window_width - 32, context->window_height - 32 * 3,
+		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_D])     { src_btn_d.x = 64; }
+	if (input->key_released[SDLK_D]) { src_btn_d.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_d, &dst_btn_d);
 
-	SDL_FRect source3 = {0, 64 * 3, 64, 64};
-	SDL_FRect destination3 = {context->window_width - 32, context->window_height - 32 * 4,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->key_down[SDLK_F])     { source3.x = 64; }
-	if (input->key_released[SDLK_F]) { source3.x = 0; }  
-	SDL_RenderTexture(context->renderer, context->sprite, &source3, &destination3);
+	SDL_FRect src_btn_f = {0, 64 * 3, 64, 64};
+	SDL_FRect dst_btn_f = {context->window_width - 32, context->window_height - 32 * 4,
+		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_F])     { src_btn_f.x = 64; }
+	if (input->key_released[SDLK_F]) { src_btn_f.x = 0; }  
+	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_f, &dst_btn_f);
 
-	SDL_FRect source4 = {0, 64 * 4, 64, 64};
-	SDL_FRect destination4 = {context->window_width - 32, context->window_height - 32 * 5,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->mouse_down[SDL_BUTTON_LEFT])     { source4.x = 64; }
-	if (input->mouse_released[SDL_BUTTON_LEFT]) { source4.x = 0; }  
-	SDL_RenderTexture(context->renderer, context->sprite, &source4, &destination4);
+	SDL_FRect src_mouse_left  = {0, 64 * 4, 64, 64};
+	SDL_FRect src_mouse_right = {0, 64 * 5, 64, 64};
+	SDL_FRect src_mouse_wheel = {0, 64 * 6, 64, 64};	
+	SDL_FRect dst_mouse = {context->window_width - 32, context->window_height - 32 * 5,
+		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 
-	SDL_FRect source5 = {0, 64 * 5, 64, 64};
-	SDL_FRect destination5 = {context->window_width - 32, context->window_height - 32 * 6,
-		                        64 * sprite_scale_factor, 64 * sprite_scale_factor};
-	if (input->mouse_down[SDL_BUTTON_RIGHT])     { source5.x = 64; }
-	if (input->mouse_released[SDL_BUTTON_RIGHT]) { source5.x = 0; }  
-	SDL_RenderTexture(context->renderer, context->sprite, &source5, &destination5);
+	SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_left, &dst_mouse);
+	if (input->mouse_down[SDL_BUTTON_LEFT])
+	{
+	  src_mouse_left.x = 64;
+		SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_left, &dst_mouse);		
+	}
+	if (input->mouse_down[SDL_BUTTON_RIGHT])
+	{
+	  src_mouse_right.x = 64;
+		SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_right, &dst_mouse);		
+	}
+	if (input->wheel_delta != 0)
+	{
+	  src_mouse_wheel.x = 64;
+		SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_wheel, &dst_mouse);		
+	}
 	
 	// NOTE(Rendering Layer): Button, Font etc
 #if ZINK_DEBUG_MODE
