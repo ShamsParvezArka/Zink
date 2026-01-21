@@ -7,6 +7,7 @@ _global F32 drag_start_target_x;
 _global F32 drag_start_target_y;
 
 _global I32 brush_size = 4.0f;
+_global F32 sprite_scale_factor = 0.5;
 
 void
 ZINK_TriggerMainLoop(I32 width, I32 height, String8 title, String8 image_path)
@@ -227,41 +228,51 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, F32 delta_ti
 	ZINK_DrawCircle(context->renderer, input->mouse_x, input->mouse_y, brush_size);
 
 	// NOTE(Sprite Layer)
-	// TODO(Future arka): Take care of this duct taped UI code. Please... 0.0
-	const F32 sprite_scale_factor = 0.5;
+	// TODO(Future arka): Take care of this duct taped UI code. Please... 0_0
+	SDL_FRect toolbar_background = {context->window_width - 32, context->window_height - (32 * 6),
+		                              66.0f, 32 * 6};
+	SDL_SetRenderDrawColor(context->renderer, 29, 29, 29, 150);		
+	SDL_RenderFillRect(context->renderer, &toolbar_background);
 	
-	SDL_FRect src_btn_r = {0, 64 * 0, 64, 64};
-	SDL_FRect dst_btn_r = {context->window_width - 32, context->window_height - 32,
+	SDL_FRect src_btn_esc = {0, 64 * 0, 64, 64};
+	SDL_FRect dst_btn_esc = {context->window_width - 32, context->window_height - 32 * 1,
+                           64 * sprite_scale_factor, 64 * sprite_scale_factor};
+	if (input->key_down[SDLK_ESCAPE])     { src_btn_esc.x = 64; }
+	if (input->key_released[SDLK_ESCAPE]) { src_btn_esc.x = 0; }
+	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_esc, &dst_btn_esc);
+
+	SDL_FRect src_btn_r = {0, 64 * 1, 64, 64};
+	SDL_FRect dst_btn_r = {context->window_width - 32, context->window_height - 32 * 2,
 		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 	if (input->key_down[SDLK_R])     { src_btn_r.x = 64; }
-	if (input->key_released[SDLK_R]) { src_btn_r.x = 0; }
+	if (input->key_released[SDLK_R]) { src_btn_r.x = 0; }  
 	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_r, &dst_btn_r);
 
-	SDL_FRect src_btn_e = {0, 64 * 1, 64, 64};
-	SDL_FRect dst_btn_e = {context->window_width - 32, context->window_height - 32 * 2,
+	SDL_FRect src_btn_e = {0, 64 * 2, 64, 64};
+	SDL_FRect dst_btn_e = {context->window_width - 32, context->window_height - 32 * 3,
 		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 	if (input->key_down[SDLK_E])     { src_btn_e.x = 64; }
 	if (input->key_released[SDLK_E]) { src_btn_e.x = 0; }  
 	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_e, &dst_btn_e);
 
-	SDL_FRect src_btn_d = {0, 64 * 2, 64, 64};
-	SDL_FRect dst_btn_d = {context->window_width - 32, context->window_height - 32 * 3,
+	SDL_FRect src_btn_d = {0, 64 * 3, 64, 64};
+	SDL_FRect dst_btn_d = {context->window_width - 32, context->window_height - 32 * 4,
 		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 	if (input->key_down[SDLK_D])     { src_btn_d.x = 64; }
 	if (input->key_released[SDLK_D]) { src_btn_d.x = 0; }  
 	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_d, &dst_btn_d);
 
-	SDL_FRect src_btn_f = {0, 64 * 3, 64, 64};
-	SDL_FRect dst_btn_f = {context->window_width - 32, context->window_height - 32 * 4,
+	SDL_FRect src_btn_f = {0, 64 * 4, 64, 64};
+	SDL_FRect dst_btn_f = {context->window_width - 32, context->window_height - 32 * 5,
 		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 	if (input->key_down[SDLK_F])     { src_btn_f.x = 64; }
 	if (input->key_released[SDLK_F]) { src_btn_f.x = 0; }  
 	SDL_RenderTexture(context->renderer, context->sprite, &src_btn_f, &dst_btn_f);
 
-	SDL_FRect src_mouse_left  = {0, 64 * 4, 64, 64};
-	SDL_FRect src_mouse_right = {0, 64 * 5, 64, 64};
-	SDL_FRect src_mouse_wheel = {0, 64 * 6, 64, 64};	
-	SDL_FRect dst_mouse = {context->window_width - 32, context->window_height - 32 * 5,
+	SDL_FRect src_mouse_left  = {0, 64 * 5, 64, 64};
+	SDL_FRect src_mouse_right = {0, 64 * 6, 64, 64};
+	SDL_FRect src_mouse_wheel = {0, 64 * 7, 64, 64};	
+	SDL_FRect dst_mouse = {context->window_width - 32, context->window_height - 32 * 6,
 		                     64 * sprite_scale_factor, 64 * sprite_scale_factor};
 
 	SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_left, &dst_mouse);
