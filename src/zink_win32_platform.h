@@ -17,16 +17,15 @@ struct Win32_Context
 typedef struct Win32_State Win32_State;
 struct Win32_State
 {
-  B32 running;
-  B32 zink_mode;
+  b32 running;
+  b32 zink_mode;
 };
 
-I32 WINAPI Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code);
+i32 WINAPI Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code);
 
-_internal void Win32TakeScreenshot(HDC screen, I32 width, I32 height);
-_internal void Win32SpawnConsole();
-_internal int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
-_internal LRESULT CALLBACK Win32GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param);
-_internal LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM l_param);
+internal void Win32TakeScreenshot(HDC screen, i32 width, i32 height);
+internal int ExportBitmap(HBITMAP bitmap_handle, HDC context, LPCSTR filename);
+internal LRESULT CALLBACK Win32GlobalHookCallback(i32 hook_code, WPARAM w_param, LPARAM l_param);
+internal LRESULT CALLBACK Win32MainWindowCallback(HWND window_handle, u32 message, WPARAM w_param, LPARAM l_param);
 
 #endif // ZINK_WIN32_PLATFORM_H

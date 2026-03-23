@@ -1,7 +1,7 @@
-_global Win32_State state = {};
-_global Win32_Context win32_context = {};
+global Win32_State state = {};
+global Win32_Context win32_context = {};
 
-I32 WINAPI
+i32 WINAPI
 Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_line, int show_code)
 {
 #if ZINK_DEBUG_MODE
@@ -60,21 +60,21 @@ Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_l
       if (state.zink_mode)
       {
         HDC screen = {};
-				DeferScope(screen = GetDC(NULL), ReleaseDC(NULL, screen))
-				{
-					String8 title = "ZINK";										
-					I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
-					I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);
+        DeferScope(screen = GetDC(NULL), ReleaseDC(NULL, screen))
+        {
+          u8 *title = "ZINK";                                                                               
+          i32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
+          i32 height = GetDeviceCaps(screen, DESKTOPVERTRES);
 
-					String8 temp_file_path = {};
-					DeferScope(temp_file_path = malloc(MAX_PATH), free(temp_file_path))
-					{
-						GetTempPath(MAX_PATH, temp_file_path);
-						strcat(temp_file_path, "zink_screenshot.bmp");
-						ZINK_TriggerMainLoop(width, height, title, temp_file_path);
-						state.zink_mode = false;
-					}					
-				}
+          u8 *temp_file_path = {};
+          DeferScope(temp_file_path = malloc(MAX_PATH), free(temp_file_path))
+          {
+            GetTempPath(MAX_PATH, temp_file_path);
+            strcat(temp_file_path, "zink_screenshot.bmp");
+            ZINK_TriggerMainLoop(width, height, title, temp_file_path);
+            state.zink_mode = false;
+          }                                     
+        }
       }
     }
   }
@@ -83,8 +83,8 @@ Win32EntryPoint(HINSTANCE instance, HINSTANCE instance_previous, PWSTR command_l
   return 0;
 }
 
-_internal void
-Win32TakeScreenshot(HDC screen, I32 width, I32 height)
+internal void
+Win32TakeScreenshot(HDC screen, i32 width, i32 height)
 {
   HDC win32_context = CreateCompatibleDC(screen);
   HBITMAP bmp_handle = CreateCompatibleBitmap(screen, width, height);
@@ -93,7 +93,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   BOOL sig = BitBlt(win32_context, 0, 0, width, height, screen, 0, 0, SRCCOPY);
   if (sig != 0)
   {
-    String8 temp_file_path = {};
+    u8 *temp_file_path = {};
     DeferScope(temp_file_path = malloc(MAX_PATH), free(temp_file_path))
     {
       GetTempPath(MAX_PATH, temp_file_path);
@@ -112,17 +112,7 @@ Win32TakeScreenshot(HDC screen, I32 width, I32 height)
   DeleteDC(win32_context);
 }
 
-_internal
-void Win32SpawnConsole()
-{
-  AllocConsole();
-  FILE *fp;
-  freopen_s(&fp, "CONOUT$", "w", stdout);
-  freopen_s(&fp, "CONOUT$", "w", stderr);
-  freopen_s(&fp, "CONIN$",  "r", stdin);
-}
-
-_internal int
+internal int
 Win32ExportBitmap(HBITMAP bitmap_handle, HDC win32_context, LPCSTR filename)
 {
   BITMAP bmp;
@@ -141,7 +131,7 @@ Win32ExportBitmap(HBITMAP bitmap_handle, HDC win32_context, LPCSTR filename)
   bmp_info_header.biClrUsed = 0;
   bmp_info_header.biClrImportant = 0;
 
-  I32 height = abs(bmp_info_header.biHeight);
+  i32 height = abs(bmp_info_header.biHeight);
   DWORD bmp_size = ((bmp.bmWidth * bmp_info_header.biBitCount + 31) / 32) * 4 * height;
   HANDLE dbi = GlobalAlloc(GHND, bmp_size);
   char *lpbitmap = (char *)GlobalLock(dbi);
@@ -173,9 +163,9 @@ Win32ExportBitmap(HBITMAP bitmap_handle, HDC win32_context, LPCSTR filename)
   bmp_file_header.bfSize = dbi_size;
   bmp_file_header.bfType = 0x4D42;
 
-	////////////////////////////////
+  ////////////////////////////////
   // TODO: bullet proof this
-	//
+  //
   DWORD bytes_written;
   WriteFile(file_handle, &bmp_file_header, sizeof(BITMAPFILEHEADER), &bytes_written, NULL);
   WriteFile(file_handle, &bmp_info_header, sizeof(BITMAPINFOHEADER), &bytes_written, NULL);
@@ -188,8 +178,8 @@ Win32ExportBitmap(HBITMAP bitmap_handle, HDC win32_context, LPCSTR filename)
   return 1;
 }
 
-_internal LRESULT CALLBACK
-Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM l_param)
+internal LRESULT CALLBACK
+Win32MainWindowCallback(HWND window_handle, u32 message, WPARAM w_param, LPARAM l_param)
 {
   LRESULT result = 0;
   switch (message)
@@ -222,7 +212,7 @@ Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM 
     case WM_DESTROY:
     {
       Shell_NotifyIcon(NIM_DELETE, &win32_context.tray_data);
-			DestroyIcon(win32_context.tray_data.hIcon);
+      DestroyIcon(win32_context.tray_data.hIcon);
       PostQuitMessage(0);
     } break;
 
@@ -235,8 +225,8 @@ Win32MainWindowCallback(HWND window_handle, U32 message, WPARAM w_param, LPARAM 
   return result;
 }
 
-_internal LRESULT CALLBACK
-Win32GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
+internal LRESULT CALLBACK
+Win32GlobalHookCallback(i32 hook_code, WPARAM w_param, LPARAM l_param)
 {
   KBDLLHOOKSTRUCT *key = (KBDLLHOOKSTRUCT *)l_param;
 
@@ -246,15 +236,15 @@ Win32GlobalHookCallback(I32 hook_code, WPARAM w_param, LPARAM l_param)
     {
       case (VK_SPACE):
       {
-        I32 ctrl = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) ||
-                   (GetAsyncKeyState(VK_RCONTROL) & 0x8000);
-        I32 win  = (GetAsyncKeyState(VK_LWIN) & 0x8000) ||
-                   (GetAsyncKeyState(VK_RWIN) & 0x8000);
+        i32 ctrl = (GetAsyncKeyState(VK_LCONTROL) & 0x8000) ||
+          (GetAsyncKeyState(VK_RCONTROL) & 0x8000);
+        i32 win  = (GetAsyncKeyState(VK_LWIN) & 0x8000) ||
+          (GetAsyncKeyState(VK_RWIN) & 0x8000);
         if (ctrl && win && !state.zink_mode)
         {
           HDC screen = GetDC(NULL);
-          I32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
-          I32 height = GetDeviceCaps(screen, DESKTOPVERTRES);          
+          i32 width = GetDeviceCaps(screen, DESKTOPHORZRES);
+          i32 height = GetDeviceCaps(screen, DESKTOPVERTRES);          
           Win32TakeScreenshot(screen, width, height);
           state.zink_mode = true;      
         }

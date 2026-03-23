@@ -1,12 +1,12 @@
 #ifndef ZINK_UTILS_H
 #define ZINK_UTILS_H
 
-_internal F32  ZINK_LinearInterpolate(F32 point_a, F32 point_b, F32 factor);
-_internal F32  ZINK_Clamp(F32 value, F32 min, F32 max);
-_internal F32  ZINK_GetDeltaTime();
-_internal void ZINK_DrawCircle(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius);
-_internal void ZINK_DrawCircleFilledDeprecated(SDL_Renderer *renderer, I32 center_x, I32 center_y, I32 radius);
-_internal void ZINK_DrawCircleFilledCPU(U32 *pixels, I32 pitch, I32 width, I32 height, I32 center_x, I32 center_y, I32 radius);
-_internal void ZINK_EraseCircleFilledCPU(U32 *pixels, U32 *original, I32 pitch, I32 width, I32 height, I32 center_x, I32 center_y, I32 radius);
+internal f32  ZINK_LinearInterpolate(f32 point_a, f32 point_b, f32 factor);
+internal f32  ZINK_Clamp(f32 value, f32 min, f32 max);
+internal f32  ZINK_GetDeltaTime();
+internal void ZINK_DrawCircle(SDL_Renderer *renderer, i32 center_x, i32 center_y, i32 radius);
+internal void ZINK_DrawCircleFilledDeprecated(SDL_Renderer *renderer, i32 center_x, i32 center_y, i32 radius);
+internal void ZINK_DrawCircleFilledCPU(u32 *pixels, i32 pitch, i32 width, i32 height, i32 center_x, i32 center_y, i32 radius);
+internal void ZINK_EraseCircleFilledCPU(u32 *pixels, u32 *original, i32 pitch, i32 width, i32 height, i32 center_x, i32 center_y, i32 radius);
 
 #endif // ZINK_UTILS_H

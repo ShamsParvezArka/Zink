@@ -1,53 +1,40 @@
 @echo off
-:: NOTE: This line is only my local machine. This will automatically
-::       initialize msvc env. For emacs setup only
+
+REM ========== Grab Compiler ==============
 call "%SystemDrive%\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 > NUL 2>&1
 
-:: --- Build Type ---------------------------------------------------------
+REM ========== Build Type =================
 set debug=1
 set release=0
-set msvc=1
-set clang=0
 
-:: --- Pre Configuration --------------------------------------------------
+REM ========== Bootstrap ==================
 if not exist debug mkdir debug
-if not exist assets mkdir assets
+if not exist release mkdir release
 
-:: --- Unpack Arguments ----------------------------------------------------
+REM ========== Unpack Arguments ===========
 if "%debug%"=="1"   set release=0 && echo [debug mode]
 if "%release%"=="1" set debug=0 && echo [release mode]
-if "%msvc%"=="1"    set clang=0 && echo [msvc compile] 
 
-:: --- Flags --------------------------------------------------------------
-:: /F4194304 --> add this to the cl_general to restrict MAX_STACK allocation 
-set cl_general= /nologo /ZI /FC /std:c11
-set cl_debug=   /Fd:debug\ /Fo:debug\\
-
-:: --- Include & Libs -----------------------------------------------------
+REM ========== Flags ======================
+set cl_common=  /nologo /std:c11 /FC /Z7
+set cl_debug=   /Od /Ob1
+set cl_release= /O2 
 set cl_include= /I".\include"
 set cl_link=    /link /libpath:".\lib"
-set cl_lib=     User32.lib Shell32.lib Gdi32.lib SDL3.lib SDL3_Image.lib  SDL3_ttf.lib
-set cl_exclude=
+set cl_lib= User32.lib Shell32.lib Gdi32.lib SDL3.lib SDL3_Image.lib 
 
-:: --- RC Config ---------------------------------------------------------
-set rc_general= /nologo
-set rc_source=  src\zink_icon.rc
-set rc_output=  resource\logo.res
+REM ========== Source & Output ============
+set output=
+if "%debug%"=="1"   set output=debug
+if "%release%"=="1" set output=release
 
-:: --- RC Compile --------------------------------------------------------
-call rc %rc_general% /fo %rc_output% %rc_source%
+set dll_src=.\lib\*.dll
+set cl_source=src\zink_main.c
+set cl_output= /Fo:%output%\ /Fe:%output%\main.exe /Fd:%output%\main.pdb
 
-:: --- CL Source & Output -------------------------------------------------
-set cl_source=  src\zink_main.c %rc_output%
-set cl_output=  /Fe:debug\zink.exe
+REM ========== Compile =====================
+if "%debug%"=="1"   call cl %cl_source% %cl_output% %cl_common% %cl_debug% %cl_include% %cl_link% %cl_lib%
+if "%release%"=="1" call cl %cl_source% %cl_output% %cl_common% %cl_release% %cl_include% %cl_link% %cl_lib%
 
-:: --- CL Compile ---------------------------------------------------------
-if "%debug%"=="1"   call cl /DZINK_DEBUG_MODE %cl_output% %cl_source% %cl_general% %cl_debug% %cl_include% %cl_link% %cl_lib% %cl_exclude%
-if "%release%"=="1" call cl %cl_output% %cl_source% %cl_general% %cl_debug% %cl_include% %cl_link% %cl_lib% %cl_exclude%
-
-:: --- Post Configuration -------------------------------------------------
-echo Copying DLL...
-set dll_source=.\lib
-set dll_destination=.\debug
-copy /Y "%dll_source%\*.dll" "%dll_destination%" > NUL
-echo Done.
+REM ========== Post Configuration ==========
+copy /Y "%dll_src%" "%output%\" > NUL

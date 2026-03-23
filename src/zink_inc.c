@@ -1,7 +1,9 @@
+#include "base/base_inc.c"
+
 #ifdef _WIN32
-  #include "zink_win32_platform.c"
+#  include "zink_win32_platform.c"
 #elif __linux__
-  #include "zink_linux_platform.c"
+#  include "zink_linux_platform.c"
 #endif
 
 #include "zink_renderer.c"
