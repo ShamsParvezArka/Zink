@@ -42,7 +42,6 @@
     (da).count++;                                               \
   } while (0);                                                  \
 
-
 #define DynArrayUnorderedInsert(da, p, n)                       \
   do {                                                          \
     assert(((p) <= (da).count) && "Unable to insert item");     \

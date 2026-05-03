@@ -1,4 +1,4 @@
-global b32 running;
+global b32 g_running;
 
 // TODO: remove these global variables
 global f32 drag_start_mouse_x;
@@ -12,30 +12,35 @@ global f32 sprite_scale_factor = 0.5;
 void
 ZINK_TriggerMainLoop(i32 width, i32 height, u8 *title, u8 *image_path)
 {
-  ZINK_Context zink_context = {};
-  u8 *driver = "direct3d11";
-  DeferScope(ZINK_InitContext(&zink_context, width, height, title, driver, true, image_path), ZINK_DestroyContext(&zink_context))
+  ZINK_Context zink_context = {0};
+  ZINK_InputState input = {0};
+  
+  ZINK_InitContext(&zink_context, width, height, title, "direct3d11", true, image_path);
+
+  u64 last_tick = 0;
+  g_running = true;
+  while (g_running)
   {
-    ZINK_InputState input = {};
-    ZINK_InitInputState(&input);
-
-    u64 last_tick = 0;
-    running = true;
-    while (running)
+    ZINK_ResetInputState(&input);
+    u64 current_tick = SDL_GetTicks();
+    f32 delta_time = ZINK_GetDeltaTime();
+    
+    SDL_Event event;
+    while (SDL_PollEvent(&event))
     {
-      u64 current_tick = SDL_GetTicks();
-                        
-      f32 delta_time = ZINK_GetDeltaTime();
-      ZINK_UpdateAndRender(&zink_context, &input, delta_time);
+      ZINK_DispatchEvent(&event, &input);
+    }
+    
+    ZINK_UpdateAndRender(&zink_context, &input, delta_time);
 
-      zink_context.fps++;
-      if (current_tick > last_tick + 1000)
-      {
-        last_tick = current_tick;
-        zink_context.fps = 0;
-      }
+    zink_context.fps++;
+    if (current_tick > last_tick + 1000)
+    {
+      last_tick = current_tick;
+      zink_context.fps = 0;
     }
   }
+  ZINK_DestroyContext(&zink_context);
   SDL_Quit();
 }
 
@@ -51,16 +56,16 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
   context->initialized = true;
   context->fps = 0;
   
-  Require(SDL_Init(SDL_INIT_VIDEO));
+  SDL_Require(SDL_Init(SDL_INIT_VIDEO));
   
   i32 window_flags = SDL_WINDOW_INPUT_FOCUS |
-    SDL_WINDOW_MOUSE_FOCUS |
-    SDL_WINDOW_BORDERLESS;
+                     SDL_WINDOW_MOUSE_FOCUS |
+                     SDL_WINDOW_BORDERLESS;
   context->window = SDL_CreateWindow(context->window_title,
                                      context->window_width,
                                      context->window_height,
                                      window_flags);
-  Require(context->window);
+  SDL_Require(context->window);
 
   SDL_ShowCursor();
   if (!SDL_SetCursor(SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_DEFAULT))) { return false; }
@@ -68,7 +73,7 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
   if (!SDL_RaiseWindow(context->window))                                 { return false; }
 
   context->renderer = SDL_CreateRenderer(context->window, context->driver);
-  Require(context->renderer);
+  SDL_Require(context->renderer);
   SDL_SetRenderDrawBlendMode(context->renderer, SDL_BLENDMODE_BLEND);     
   
   if (vsync_flag) SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE);
@@ -78,9 +83,9 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
   SDL_Surface *tmp;
   DeferScope(tmp = IMG_Load(image_path), SDL_DestroySurface(tmp))
   {
-    Require(tmp);
+    SDL_Require(tmp);
     context->surface = SDL_ConvertSurface(tmp, SDL_PIXELFORMAT_RGBA8888);
-    Require(context->surface);
+    SDL_Require(context->surface);
   }
 
   i32 pixel_count = context->surface->w * context->surface->h;
@@ -94,7 +99,7 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
                                        SDL_TEXTUREACCESS_STREAMING,
                                        context->texture_width,
                                        context->texture_height);
-  Require(context->texture);
+  SDL_Require(context->texture);
   SDL_SetTextureBlendMode(context->texture, SDL_BLENDMODE_BLEND);
 
   // NOTE: Copy initial image into screenshot texture
@@ -112,9 +117,9 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
   u8 *sprite_path = "..\\assets\\keys.png";
   DeferScope(tmp = IMG_Load(sprite_path), SDL_DestroySurface(tmp))
   {
-    Require(tmp);
+    SDL_Require(tmp);
     context->sprite = SDL_CreateTextureFromSurface(context->renderer, tmp);
-    Require(context->texture);
+    SDL_Require(context->texture);
   }
 
   context->camera.offset.x = context->window_width * 0.5f;
@@ -131,8 +136,6 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
 internal void
 ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_time)
 {
-  // NOTE: Update input & camera
-  ZINK_UpdateInputState(input);
   ZINK_UpdateCamera(&context->camera,
                     input,
                     context->texture_width, context->texture_height,
@@ -143,8 +146,8 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
   context->dest.h = context->texture_height * context->camera.zoom;     
 
   // NOTE: Update brush size
-  if (input->key_down[SDLK_F]) { brush_size = ZINK_Clamp(++brush_size, 4.0f, 30.0f); }
-  if (input->key_down[SDLK_D]) { brush_size = ZINK_Clamp(--brush_size, 4.0f, 30.0f); }
+  if (input->kbd_down[SDL_SCANCODE_F]) { brush_size = ZINK_Clamp(++brush_size, 4.0f, 30.0f); }
+  if (input->kbd_down[SDL_SCANCODE_D]) { brush_size = ZINK_Clamp(--brush_size, 4.0f, 30.0f); }
 
   // NOTE:(Rendering Layer): Painting
   SDL_SetRenderTarget(context->renderer, context->texture);
@@ -229,44 +232,43 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
 
   // NOTE(Sprite Layer)
   // TODO(Future arka): Take care of this duct taped UI code. Please... 0_0
-  SDL_FRect toolbar_background = {context->window_width - 32, context->window_height - (32 * 6),
-    66.0f, 32 * 6};
+  SDL_FRect toolbar_background = {context->window_width - 32, context->window_height - (32 * 6), 66.0f, 32 * 6};
   SDL_SetRenderDrawColor(context->renderer, 29, 29, 29, 150);             
   SDL_RenderFillRect(context->renderer, &toolbar_background);
         
   SDL_FRect src_btn_esc = {0, 64 * 0, 64, 64};
   SDL_FRect dst_btn_esc = {context->window_width - 32, context->window_height - 32 * 1,
     64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->key_down[SDLK_ESCAPE])     { src_btn_esc.x = 64; }
-  if (input->key_released[SDLK_ESCAPE]) { src_btn_esc.x = 0; }
+  if (input->kbd_down[SDL_SCANCODE_ESCAPE])     { src_btn_esc.x = 64; }
+  if (input->kbd_released[SDL_SCANCODE_ESCAPE]) { src_btn_esc.x = 0; }
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_esc, &dst_btn_esc);
 
   SDL_FRect src_btn_r = {0, 64 * 1, 64, 64};
   SDL_FRect dst_btn_r = {context->window_width - 32, context->window_height - 32 * 2,
     64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->key_down[SDLK_R])     { src_btn_r.x = 64; }
-  if (input->key_released[SDLK_R]) { src_btn_r.x = 0; }  
+  if (input->kbd_down[SDL_SCANCODE_R])     { src_btn_r.x = 64; }
+  if (input->kbd_released[SDL_SCANCODE_R]) { src_btn_r.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_r, &dst_btn_r);
 
   SDL_FRect src_btn_e = {0, 64 * 2, 64, 64};
   SDL_FRect dst_btn_e = {context->window_width - 32, context->window_height - 32 * 3,
     64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->key_down[SDLK_E])     { src_btn_e.x = 64; }
-  if (input->key_released[SDLK_E]) { src_btn_e.x = 0; }  
+  if (input->kbd_down[SDL_SCANCODE_E])     { src_btn_e.x = 64; }
+  if (input->kbd_released[SDL_SCANCODE_E]) { src_btn_e.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_e, &dst_btn_e);
 
   SDL_FRect src_btn_d = {0, 64 * 3, 64, 64};
   SDL_FRect dst_btn_d = {context->window_width - 32, context->window_height - 32 * 4,
     64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->key_down[SDLK_D])     { src_btn_d.x = 64; }
-  if (input->key_released[SDLK_D]) { src_btn_d.x = 0; }  
+  if (input->kbd_down[SDL_SCANCODE_D])     { src_btn_d.x = 64; }
+  if (input->kbd_released[SDL_SCANCODE_D]) { src_btn_d.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_d, &dst_btn_d);
 
   SDL_FRect src_btn_f = {0, 64 * 4, 64, 64};
   SDL_FRect dst_btn_f = {context->window_width - 32, context->window_height - 32 * 5,
     64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->key_down[SDLK_F])     { src_btn_f.x = 64; }
-  if (input->key_released[SDLK_F]) { src_btn_f.x = 0; }  
+  if (input->kbd_down[SDL_SCANCODE_F])     { src_btn_f.x = 64; }
+  if (input->kbd_released[SDL_SCANCODE_F]) { src_btn_f.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_f, &dst_btn_f);
 
   SDL_FRect src_mouse_left  = {0, 64 * 5, 64, 64};
@@ -286,7 +288,7 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
     src_mouse_right.x = 64;
     SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_right, &dst_mouse);            
   }
-  if (input->wheel_delta != 0)
+  if (input->wheel != 0)
   {
     src_mouse_wheel.x = 64;
     SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_wheel, &dst_mouse);            
@@ -319,114 +321,199 @@ ZINK_DestroyContext(ZINK_Context *context)
   SDL_DestroyWindow(context->window);
 }
 
-internal b32
-ZINK_InitInputState(ZINK_InputState *input)
-{
-  input->brush_mode = DRAW;
-  memset(input->mouse_down,     0, sizeof(input->mouse_down[0]) * 5);
-  memset(input->mouse_released, 0, sizeof(input->mouse_released[0]) * 5);
-  memset(input->key_down,       0, sizeof(input->key_down[0]) * SDL_SCANCODE_COUNT);
-  memset(input->key_released,   0, sizeof(input->key_released[0]) * SDL_SCANCODE_COUNT);
-
-  return true;
-}
+// NOTE(arka): depricated fn
+// internal b32
+// ZINK_InitInputState(ZINK_InputState *input)
+// {
+//   input->brush_mode = DRAW;
+//   memset(input->mouse_down,     0, sizeof(input->mouse_down[0]) * 5);
+//   memset(input->mouse_released, 0, sizeof(input->mouse_released[0]) * 5);
+//   memset(input->kbd_down,       0, sizeof(input->kbd_down[0]) * SDL_SCANCODE_COUNT);
+//   memset(input->kbd_released,   0, sizeof(input->kbd_released[0]) * SDL_SCANCODE_COUNT);
+// 
+//   return true;
+// }
 
 internal void
-ZINK_UpdateInputState(ZINK_InputState *input)
+ZINK_ResetInputState(ZINK_InputState *input)
 {
-  memset(input->mouse_pressed,  0, sizeof(input->mouse_pressed[0]) * 5);                  
-  input->wheel_delta = 0.0f;
-        
-  SDL_Event event;
-  while (SDL_PollEvent(&event))
+  MemoryZero(input->kbd_pressed, sizeof(input->kbd_pressed));
+  MemoryZero(input->kbd_released, sizeof(input->kbd_released));
+  MemoryZero(input->mouse_pressed, sizeof(input->mouse_pressed));
+  MemoryZero(input->mouse_released, sizeof(input->mouse_released));
+
+  input->wheel = 0;
+}
+
+// internal void
+// ZINK_UpdateInputState(ZINK_InputState *input)
+// {
+//   memset(input->mouse_pressed,  0, sizeof(input->mouse_pressed[0]) * 5);                  
+//   input->wheel = 0.0f;
+//         
+//   SDL_Event event;
+//   while (SDL_PollEvent(&event))
+//   {
+//     switch (event.type)
+//     {
+//       case SDL_EVENT_QUIT:
+//       {
+//         running = false;
+//       } break;
+//                         
+//       ////////////////////////////////
+//       // NOTE: KEYBOARD EVENTS
+//       //
+//       case SDL_EVENT_KBD_DOWN:
+//       {
+//         SDL_Keycode key = event.key.key;
+//                                 
+//         if (key == SDL_SCANCODE_ESCAPE) running = false;
+//         if (key == SDL_SCANCODE_D) { KeyRegister(input->kbd_down, input->kbd_released, SDL_SCANCODE_D); }
+//         if (key == SDL_SCANCODE_F) { KeyRegister(input->kbd_down, input->kbd_released, SDL_SCANCODE_F); }                               
+//         if (key == SDL_SCANCODE_R) { KeyRegister(input->kbd_down, input->kbd_released, SDL_SCANCODE_R); }       
+// 
+//         if (key == SDL_SCANCODE_E && input->brush_mode == DRAW)
+//         {
+//           input->brush_mode = ERASE;
+//           KeyRegister(input->kbd_down, input->kbd_released, SDL_SCANCODE_E);
+//         }
+//         else if (key == SDL_SCANCODE_E && input->brush_mode == ERASE)
+//         {
+//           input->brush_mode = DRAW;                                       
+//           KeyUnregister(input->kbd_down, input->kbd_released, SDL_SCANCODE_E);
+//         }
+//       } break;
+//                         
+//       case SDL_EVENT_KEY_UP:
+//       {
+//         SDL_Keycode key = event.key.key;
+// 
+//         if (key == SDL_SCANCODE_D) { KeyUnregister(input->kbd_down, input->kbd_released, SDL_SCANCODE_D); }
+//         if (key == SDL_SCANCODE_F) { KeyUnregister(input->kbd_down, input->kbd_released, SDL_SCANCODE_F); }                                                             
+//         if (key == SDL_SCANCODE_R) { KeyUnregister(input->kbd_down, input->kbd_released, SDL_SCANCODE_R); }
+//       } break;      
+// 
+//       ////////////////////////////////
+//       // NOTE: MOUSE EVENTS
+//       //
+//       case SDL_EVENT_MOUSE_WHEEL:
+//       {
+//         input->wheel = event.wheel.y;
+//       } break;
+// 
+//       case SDL_EVENT_MOUSE_BUTTON_DOWN:
+//       {
+//         if (event.button.button == SDL_BUTTON_LEFT)
+//         {
+//           input->last_world_x = input->world_x;
+//           input->last_world_y = input->world_y;
+//           KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
+//         }                               
+//         if (event.button.button == SDL_BUTTON_RIGHT)
+//         {
+//           input->mouse_drag = true;
+//           KeyRegisterOnce(input->mouse_pressed, SDL_BUTTON_RIGHT);
+//           KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_RIGHT);
+//         }
+//       } break;
+// 
+//       case SDL_EVENT_MOUSE_BUTTON_UP:
+//       {
+//         if (event.button.button == SDL_BUTTON_LEFT)
+//         {
+//           KeyUnregister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
+//         }
+//         if (event.button.button == SDL_BUTTON_RIGHT)
+//         {
+//           input->mouse_drag = false;
+//           KeyUnregister(input->mouse_down, input->mouse_released, SDL_BUTTON_RIGHT);
+//         }                               
+//       } break;
+// 
+//       case SDL_EVENT_MOUSE_MOTION:
+//       {
+//         input->mouse_x = event.motion.x;
+//         input->mouse_y = event.motion.y;
+//       } break;
+// 
+//       default:
+//       {
+//       } break;
+//     }
+//   }
+// }
+
+internal void
+ZINK_DispatchEvent(SDL_Event *event, ZINK_InputState *input)
+{
+  SDL_TextInputEvent   text     = event->text;
+  SDL_KeyboardEvent    keyboard = event->key;
+  SDL_MouseButtonEvent mouse    = event->button;
+  SDL_MouseWheelEvent  wheel    = event->wheel;
+  SDL_MouseMotionEvent motion   = event->motion;
+  
+  switch (event->type)
   {
-    switch (event.type)
+    case SDL_EVENT_QUIT:
     {
-      case SDL_EVENT_QUIT:
-      {
-        running = false;
-      } break;
-                        
-      ////////////////////////////////
-      // NOTE: KEYBOARD EVENTS
-      //
-      case SDL_EVENT_KEY_DOWN:
-      {
-        SDL_Keycode key = event.key.key;
-                                
-        if (key == SDLK_ESCAPE) running = false;
-        if (key == SDLK_D) { KeyRegister(input->key_down, input->key_released, SDLK_D); }
-        if (key == SDLK_F) { KeyRegister(input->key_down, input->key_released, SDLK_F); }                               
-        if (key == SDLK_R) { KeyRegister(input->key_down, input->key_released, SDLK_R); }       
+      g_running = false;
+    } break;
+                
+    ////////////////////////////////
+    // NOTE: KEYBOARD EVENTS
+    //
+    case SDL_EVENT_KEY_DOWN:
+    {
+      u32 sc = keyboard.scancode;
+      KeyboardDown(sc, input);
+    } break;
 
-        if (key == SDLK_E && input->brush_mode == DRAW)
-        {
-          input->brush_mode = ERASE;
-          KeyRegister(input->key_down, input->key_released, SDLK_E);
-        }
-        else if (key == SDLK_E && input->brush_mode == ERASE)
-        {
-          input->brush_mode = DRAW;                                       
-          KeyUnregister(input->key_down, input->key_released, SDLK_E);
-        }
-      } break;
-                        
-      case SDL_EVENT_KEY_UP:
-      {
-        SDL_Keycode key = event.key.key;
+    case SDL_EVENT_KEY_UP:
+    {
+      u32 sc = keyboard.scancode;
+      KeyboardUp(sc, input);
+    } break;
 
-        if (key == SDLK_D) { KeyUnregister(input->key_down, input->key_released, SDLK_D); }
-        if (key == SDLK_F) { KeyUnregister(input->key_down, input->key_released, SDLK_F); }                                                             
-        if (key == SDLK_R) { KeyUnregister(input->key_down, input->key_released, SDLK_R); }
-      } break;      
+    ////////////////////////////////
+    // NOTE: TEXT EVENTS
+    //
+    case SDL_EVENT_TEXT_INPUT:
+    {
+      input->ascii_char = *text.text;
+    } break;
+                
+    ////////////////////////////////
+    // NOTE: MOUSE EVENTS
+    //
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    {
+      u32 btn = mouse.button;
+      MouseDown(btn, input);
+      input->drag = input->mouse_down[SDL_BUTTON_LEFT];
+    } break;
 
-      ////////////////////////////////
-      // NOTE: MOUSE EVENTS
-      //
-      case SDL_EVENT_MOUSE_WHEEL:
-      {
-        input->wheel_delta = event.wheel.y;
-      } break;
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+    {
+      u32 btn = mouse.button;
+      MouseUp(btn, input);
+      input->drag = input->mouse_down[SDL_BUTTON_LEFT];
+    } break;
 
-      case SDL_EVENT_MOUSE_BUTTON_DOWN:
-      {
-        if (event.button.button == SDL_BUTTON_LEFT)
-        {
-          input->last_world_x = input->world_x;
-          input->last_world_y = input->world_y;
-          KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
-        }                               
-        if (event.button.button == SDL_BUTTON_RIGHT)
-        {
-          input->mouse_drag = true;
-          KeyRegisterOnce(input->mouse_pressed, SDL_BUTTON_RIGHT);
-          KeyRegister(input->mouse_down, input->mouse_released, SDL_BUTTON_RIGHT);
-        }
-      } break;
+    case SDL_EVENT_MOUSE_WHEEL:
+    {
+      input->wheel += wheel.y;                  
+    } break;
 
-      case SDL_EVENT_MOUSE_BUTTON_UP:
-      {
-        if (event.button.button == SDL_BUTTON_LEFT)
-        {
-          KeyUnregister(input->mouse_down, input->mouse_released, SDL_BUTTON_LEFT);
-        }
-        if (event.button.button == SDL_BUTTON_RIGHT)
-        {
-          input->mouse_drag = false;
-          KeyUnregister(input->mouse_down, input->mouse_released, SDL_BUTTON_RIGHT);
-        }                               
-      } break;
+    case SDL_EVENT_MOUSE_MOTION:
+    {
+      input->mouse_x = motion.x;
+      input->mouse_y = motion.y;
+    } break;
 
-      case SDL_EVENT_MOUSE_MOTION:
-      {
-        input->mouse_x = event.motion.x;
-        input->mouse_y = event.motion.y;
-      } break;
-
-      default:
-      {
-      } break;
-    }
+    default:
+    {           
+    } break;
   }
 }
 
@@ -444,7 +531,7 @@ ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, f32 texture_width,
     drag_start_target_y = cam->target.y;
   }
 
-  if (input->wheel_delta)
+  if (input->wheel)
   {
     cam->offset.x = input->mouse_x;
     cam->offset.y = input->mouse_y;
@@ -452,13 +539,13 @@ ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, f32 texture_width,
     cam->target.y = input->world_y;
     
     local f32 zoom_factor = 1.1f;
-    if (input->wheel_delta > 0) cam->zoom_target *= zoom_factor;
-    if (input->wheel_delta < 0) cam->zoom_target /= zoom_factor;
+    if (input->wheel > 0) cam->zoom_target *= zoom_factor;
+    if (input->wheel < 0) cam->zoom_target /= zoom_factor;
     
     cam->zoom_target = ZINK_Clamp(cam->zoom_target, 0.5f, 7.0f);    
   }
   
-  if (input->mouse_drag)
+  if (input->drag)
   {
     f32 dx = (input->mouse_x - drag_start_mouse_x) / cam->zoom;
     f32 dy = (input->mouse_y - drag_start_mouse_y) / cam->zoom;
@@ -466,7 +553,7 @@ ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, f32 texture_width,
     cam->target.y = drag_start_target_y - dy;    
   }
 
-  if (input->key_down[SDLK_R])
+  if (input->kbd_down[SDL_SCANCODE_R])
   {
     ZINK_ResetCamera(cam, texture_width, texture_height);
   }  
