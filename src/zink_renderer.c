@@ -76,8 +76,8 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
   SDL_Require(context->renderer);
   SDL_SetRenderDrawBlendMode(context->renderer, SDL_BLENDMODE_BLEND);     
   
-  if (vsync_flag) SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE);
-  else            SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_DISABLE);
+  if (vsync_flag) { SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_ENABLE); }
+  else            { SDL_SetRenderVSync(context->renderer, ZINC_VSYNC_DISABLE); }
         
   // NOTE: Screenshot texture
   SDL_Surface *tmp;
@@ -136,6 +136,15 @@ ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *dr
 internal void
 ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_time)
 {
+  if (input->kbd_down[SDL_SCANCODE_ESCAPE]) { g_running = false; }
+  if (input->kbd_pressed[SDL_SCANCODE_E])      { input->brush_mode ^= 1; }
+
+  if (input->mouse_down[SDL_BUTTON_LEFT])
+  {
+    input->last_world_x = input->world_x;
+    input->last_world_y = input->world_y;
+  }
+
   ZINK_UpdateCamera(&context->camera,
                     input,
                     context->texture_width, context->texture_height,
@@ -237,36 +246,46 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
   SDL_RenderFillRect(context->renderer, &toolbar_background);
         
   SDL_FRect src_btn_esc = {0, 64 * 0, 64, 64};
-  SDL_FRect dst_btn_esc = {context->window_width - 32, context->window_height - 32 * 1,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
+  SDL_FRect dst_btn_esc = {context->window_width - 32,
+                           context->window_height - 32 * 1,
+                           64 * sprite_scale_factor,
+                           64 * sprite_scale_factor};
   if (input->kbd_down[SDL_SCANCODE_ESCAPE])     { src_btn_esc.x = 64; }
   if (input->kbd_released[SDL_SCANCODE_ESCAPE]) { src_btn_esc.x = 0; }
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_esc, &dst_btn_esc);
 
   SDL_FRect src_btn_r = {0, 64 * 1, 64, 64};
-  SDL_FRect dst_btn_r = {context->window_width - 32, context->window_height - 32 * 2,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
+  SDL_FRect dst_btn_r = {context->window_width - 32,
+                         context->window_height - 32 * 2,
+                         64 * sprite_scale_factor,
+                         64 * sprite_scale_factor};
   if (input->kbd_down[SDL_SCANCODE_R])     { src_btn_r.x = 64; }
   if (input->kbd_released[SDL_SCANCODE_R]) { src_btn_r.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_r, &dst_btn_r);
 
   SDL_FRect src_btn_e = {0, 64 * 2, 64, 64};
-  SDL_FRect dst_btn_e = {context->window_width - 32, context->window_height - 32 * 3,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
-  if (input->kbd_down[SDL_SCANCODE_E])     { src_btn_e.x = 64; }
-  if (input->kbd_released[SDL_SCANCODE_E]) { src_btn_e.x = 0; }  
+  SDL_FRect dst_btn_e = {context->window_width - 32,
+                         context->window_height - 32 * 3,
+                         64 * sprite_scale_factor,
+                         64 * sprite_scale_factor};
+  if (input->brush_mode == ERASE) { src_btn_e.x = 64; }
+  if (input->brush_mode == DRAW)  { src_btn_e.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_e, &dst_btn_e);
 
   SDL_FRect src_btn_d = {0, 64 * 3, 64, 64};
-  SDL_FRect dst_btn_d = {context->window_width - 32, context->window_height - 32 * 4,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
+  SDL_FRect dst_btn_d = {context->window_width - 32,
+                         context->window_height - 32 * 4,
+                         64 * sprite_scale_factor,
+                         64 * sprite_scale_factor};
   if (input->kbd_down[SDL_SCANCODE_D])     { src_btn_d.x = 64; }
   if (input->kbd_released[SDL_SCANCODE_D]) { src_btn_d.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_d, &dst_btn_d);
 
   SDL_FRect src_btn_f = {0, 64 * 4, 64, 64};
-  SDL_FRect dst_btn_f = {context->window_width - 32, context->window_height - 32 * 5,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
+  SDL_FRect dst_btn_f = {context->window_width - 32,
+                         context->window_height - 32 * 5,
+                         64 * sprite_scale_factor,
+                         64 * sprite_scale_factor};
   if (input->kbd_down[SDL_SCANCODE_F])     { src_btn_f.x = 64; }
   if (input->kbd_released[SDL_SCANCODE_F]) { src_btn_f.x = 0; }  
   SDL_RenderTexture(context->renderer, context->sprite, &src_btn_f, &dst_btn_f);
@@ -274,8 +293,10 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
   SDL_FRect src_mouse_left  = {0, 64 * 5, 64, 64};
   SDL_FRect src_mouse_right = {0, 64 * 6, 64, 64};
   SDL_FRect src_mouse_wheel = {0, 64 * 7, 64, 64};        
-  SDL_FRect dst_mouse = {context->window_width - 32, context->window_height - 32 * 6,
-    64 * sprite_scale_factor, 64 * sprite_scale_factor};
+  SDL_FRect dst_mouse = {context->window_width - 32,
+                         context->window_height - 32 * 6,
+                         64 * sprite_scale_factor,
+                         64 * sprite_scale_factor};
 
   SDL_RenderTexture(context->renderer, context->sprite, &src_mouse_left, &dst_mouse);
   if (input->mouse_down[SDL_BUTTON_LEFT])
@@ -297,7 +318,7 @@ ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_ti
   // NOTE(Rendering Layer): Button, Font etc
 #if ZINK_DEBUG_MODE
   SDL_RenderDebugTextFormat(context->renderer, 5, 5,  "Brush Size: %d", brush_size);
-  SDL_RenderDebugTextFormat(context->renderer, 5, 15, "Mouse Drag: %d", input->mouse_drag);
+  SDL_RenderDebugTextFormat(context->renderer, 5, 15, "Mouse Drag: %d", input->drag);
   SDL_RenderDebugTextFormat(context->renderer, 5, 25, "Mouse LClick: %d", input->mouse_down[SDL_BUTTON_LEFT]);
   SDL_RenderDebugTextFormat(context->renderer, 5, 35, "Mouse RClick: %d", input->mouse_down[SDL_BUTTON_RIGHT]);
   SDL_RenderDebugTextFormat(context->renderer, 5, 45, "Current Mouse (X, Y): (%f, %f)", input->world_x, input->world_y);
@@ -490,14 +511,14 @@ ZINK_DispatchEvent(SDL_Event *event, ZINK_InputState *input)
     {
       u32 btn = mouse.button;
       MouseDown(btn, input);
-      input->drag = input->mouse_down[SDL_BUTTON_LEFT];
+      input->drag = input->mouse_down[SDL_BUTTON_RIGHT];
     } break;
 
     case SDL_EVENT_MOUSE_BUTTON_UP:
     {
       u32 btn = mouse.button;
       MouseUp(btn, input);
-      input->drag = input->mouse_down[SDL_BUTTON_LEFT];
+      input->drag = input->mouse_down[SDL_BUTTON_RIGHT];
     } break;
 
     case SDL_EVENT_MOUSE_WHEEL:

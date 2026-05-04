@@ -41,8 +41,8 @@
 typedef enum ZINK_BrushMode ZINK_BrushMode;
 enum ZINK_BrushMode
 {
-  DRAW,
-  ERASE
+  DRAW  = 0,
+  ERASE = 1
 };
 
 typedef struct ZINK_DebugFont ZINK_DebugFont;
