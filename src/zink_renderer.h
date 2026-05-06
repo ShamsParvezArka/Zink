@@ -5,7 +5,8 @@
 #define ZINC_VSYNC_DISABLE 0
 
 #define SDL_Require(expr)                               \
-  do {                                                  \
+  do                                                    \
+  {                                                     \
     if (!(expr))                                        \
     {                                                   \
       SDL_Log("Require failer: %s\nSDL_Error: %s\n",    \
@@ -15,25 +16,29 @@
   } while (0)
 
 #define KeyboardDown(sc, in)                                            \
-  do {                                                                  \
+  do                                                                    \
+  {                                                                     \
     (in)->kbd_down[(sc)] = true;                                        \
     if (!(in)->kbd_pressed[(sc)]) { (in)->kbd_pressed[(sc)] = true; }   \
   } while (0)
 
 #define KeyboardUp(sc, in)                      \
-  do {                                          \
+  do                                            \
+  {                                             \
     (in)->kbd_down[(sc)] = false;               \
     (in)->kbd_released[(sc)] = true;            \
   } while (0)
 
 #define MouseDown(btn, in)                                              \
-  do {                                                                  \
+  do                                                                    \
+  {                                                                     \
     (in)->mouse_down[(btn)] = true;                                     \
     if (!(in)->mouse_pressed[(btn)]) { (in)->mouse_pressed[(btn)] = true; } \
   } while (0)
 
 #define MouseUp(btn, in)                        \
-  do {                                          \
+  do                                            \
+  {                                             \
     (in)->mouse_down[(btn)] = false;            \
     (in)->mouse_released[(btn)] = true;         \
   } while (0)
@@ -132,17 +137,28 @@ struct ZINK_InputState
   u8 ascii_char;
 };
 
+typedef struct ZINK_Toolbar ZINK_Toolbar;
+struct ZINK_Toolbar
+{
+  i32 sprite_row;
+  SDL_Scancode key;
+  i32 slot;
+};
+
+
 void ZINK_TriggerMainLoop(i32 width, i32 height, u8 *title, u8 *image_path);
 
-internal b32  ZINK_InitContext(ZINK_Context *context, i32 width, i32 height, u8 *title, u8 *driver, b32 vsync_flag, u8 *image_path);
-// internal b32  ZINK_InitInputState(ZINK_InputState *input);
-internal void ZINK_UpdateAndRender(ZINK_Context *context, ZINK_InputState *input, f32 delta_time);
+internal b32  ZINK_InitContext(ZINK_Context *ctx, i32 width, i32 height, u8 *title, u8 *driver, b32 vsync_flag, u8 *image_path);
+internal void ZINK_UpdateAndRender(ZINK_Context *ctx, ZINK_InputState *input, f32 delta_time);
 internal void ZINK_UpdateInputState(ZINK_InputState *input);
 internal void ZINK_UpdateCamera(ZINK_Camera2D *cam, ZINK_InputState *input, f32 texture_width, f32 texture_height, f32 delta_time);
 internal void ZINK_ResetCamera(ZINK_Camera2D *cam, f32 texture_width, f32 texture_height);
-internal void ZINK_DestroyContext(ZINK_Context *context);
+internal void ZINK_DestroyContext(ZINK_Context *ctx);
 
 internal void ZINK_DispatchEvent(SDL_Event *event, ZINK_InputState *input);
 internal void ZINK_ResetInputState(ZINK_InputState *input);
+internal void ZINK_ProcessInput(ZINK_Context *ctx, ZINK_InputState *input, f32 delta_time);
+internal void ZINK_StrokeOnCanvas(ZINK_Context *ctx, ZINK_InputState *input);
+internal void ZINK_RenderToolbar(ZINK_Context *ctx, ZINK_InputState *input);
 
 #endif // ZINK_RENDERER_H

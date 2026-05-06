@@ -74,7 +74,7 @@
 #define DeferScope(begin, end)        for (u32 Glue(_i_, __LINE__) = ((begin), 0); !Glue(_i_, __LINE__); Glue(_i_, __LINE__) += 1, (end))
 #define DeferScopeChecked(begin, end) for (u32 Glue(_i_, __LINE__) = 2 * !(begin); (Glue(_i_, __LINE__) == 2 ? ((end), 0) : !Glue(_i_, __LINE__)); Glue(_i_, __LINE__) += 1, (end))
 
-#define CArrayCount(a) (sizeof(a) / sizeof((a)[0]))
+#define ArrayCount(a) (sizeof(a) / sizeof((a)[0]))
 #define ForEach(type_var, array)                                        \
   for (u64 Glue(_i_, __LINE__) = 0, Glue(_s_, __LINE__) = CArrayCount(array); \
        Glue(_i_, __LINE__) < Glue(_s_, __LINE__);                       \
